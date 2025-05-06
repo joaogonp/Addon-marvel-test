@@ -16,14 +16,8 @@
       "id": "release-order",
       "name": "Release Order",
       "subcategories": [
-        {
-          "id": "new",
-          "name": "New"
-        },
-        {
-          "id": "old",
-          "name": "Old"
-        }
+        { "id": "new", "name": "New" },
+        { "id": "old", "name": "Old" }
       ]
     },
     {
