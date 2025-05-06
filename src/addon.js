@@ -89,7 +89,7 @@ function sortByReleaseDate(data, order = 'desc') {
 builder.defineCatalogHandler(async ({ type, id, extra }) => {
   console.log(`Catalog requested - Type: ${type}, ID: ${id}, Extra: ${JSON.stringify(extra)}`);
 
-  const cacheKey = id + (extra?.subcatalog ? `_${extra.subcatalog}` : '');
+  const cacheKey = id + (extra?.subcatalog ? `_${extra.subcatalog}` : (extra?.sort ? `_${extra.sort}` : ''));
   if (cachedCatalog[cacheKey]) {
     console.log(`✅ Retornando catálogo do cache para ID: ${cacheKey}`);
     return cachedCatalog[cacheKey];
