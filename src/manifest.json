@@ -21,9 +21,17 @@
           "name": "sort",
           "options": ["new", "old"],
           "isRequired": false,
-          "default": "new"
+          "default": "new",
+          "optionLabels": {
+            "new": "New (Recent First)",
+            "old": "Old (Oldest First)"
+          }
         }
-      ]
+      ],
+      "behaviorHints": {
+        "orderHint": 2,
+        "listMaxItems": 50
+      }
     },
     {
       "type": "Marvel",
