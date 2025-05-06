@@ -124,14 +124,8 @@ builder.defineCatalogHandler(async ({ type, id }) => {
     return Promise.resolve({ metas: [] }); // Retorna vazio se o ID não for reconhecido
   }
 
-  // Ordena os dados dependendo da categoria "new" ou "old"
-  let sortedData;
-  if (id === 'release-order') {
-    const order = type === 'new' ? 'asc' : 'desc'; // "new" para crescente, "old" para decrescente
-    sortedData = sortByReleaseDate(dataSource, order);
-  } else {
-    sortedData = dataSource;
-  }
+  // Sempre ordena os dados como "old to new" (velho para novo)
+  const sortedData = sortByReleaseDate(dataSource, 'desc'); // Garante que seja sempre velho para novo
 
   // Processa os dados para gerar o catálogo
   const metas = await Promise.all(
