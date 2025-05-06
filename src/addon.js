@@ -133,7 +133,7 @@ builder.defineCatalogHandler(async ({ type, id, extra }) => {
   // Processa os dados para gerar o catálogo
   const metas = await Promise.all(sortedData.map(fetchAdditionalData));
   const validMetas = metas.filter(item => item !== null);
-  console.log(`✅ Catálogo gerado com ${validMetas.length} itens para ID: ${id}, Sort: ${extra?.sort || 'default'}`);
+  console.log(`✅ Catálogo gerado com ${validMetas.length} itens for ID: ${id}, Sort: ${extra?.sort || 'default'}`);
 
   // Armazena o catálogo em cache
   cachedCatalog[cacheKey] = { metas: validMetas };
