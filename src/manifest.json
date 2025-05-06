@@ -15,9 +15,12 @@
       "type": "Marvel",
       "id": "release-order",
       "name": "Release Order",
-      "subcategories": [
-        { "id": "new", "name": "New" },
-        { "id": "old", "name": "Old" }
+      "extra": [
+        {
+          "name": "sortOrder",
+          "options": ["New", "Old"],
+          "isRequired": false
+        }
       ]
     },
     {
@@ -48,7 +51,6 @@
     "configurable": false
   },
   "contactEmail": "jpnapsp@gmail.com",
-
   "stremioAddonsConfig": {
     "issuer": "https://stremio-addons.net",
     "signature": "eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0..zTaTTCcviqQPiIvU4QDfCQ.wSlk8AoM4p2nvlvoQJEoLRRx5_Msnu37O9bAsgwhJTZYu4uXd7Cve9GaVXdnwZ4nAeNSsRSgp51mofhf0EVQYwx7jGxh4FEvs8MMuWeHQ9alNsqVuy3-Mc459B9myIT-.R_1iaQbNExj4loQJlyWYtA"
