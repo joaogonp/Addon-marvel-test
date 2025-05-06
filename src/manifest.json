@@ -15,12 +15,13 @@
       "type": "Marvel",
       "id": "release-order",
       "name": "Release Order",
-      "extraSupported": ["sortOrder"],
+      "extraSupported": ["sort"],
       "extra": [
         {
-          "name": "sortOrder",
-          "options": ["New", "Old"],
-          "isRequired": false
+          "name": "sort",
+          "options": ["new", "old"],
+          "isRequired": false,
+          "default": "new"
         }
       ]
     },
