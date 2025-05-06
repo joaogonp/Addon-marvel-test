@@ -464,22 +464,6 @@ module.exports = [
     "poster": "https://image.tmdb.org/t/p/original/lztz5XBMG1x6Y5ubz7CxfPFsAcW.jpg"
   },
   {
-    "title": "Spidey and His Amazing Friends",
-    "type": "series",
-    "imdbId": "tt10862280",
-    "id": "marvel_tt10862280",
-    "releaseYear": "2021",
-    "poster": "https://image.tmdb.org/t/p/original/dA4S18rnLx4sWW8agmLLKUvRM7n.jpg"
-  },
-  {
-    "title": "Hit-Monkey",
-    "type": "series",
-    "imdbId": "tt9811316",
-    "id": "marlve_tt9811316",
-    "releaseYear": "2021",
-    "poster": "https://image.tmdb.org/t/p/original/1aK7hApRSDUv8xxDQXyQil7qBjN.jpg"
-  },
-  {
     "title": "LEGO Avengers: Loki in Training",
     "type": "movie",
     "imdbId": "tt21072140",
@@ -536,20 +520,36 @@ module.exports = [
     "poster": "https://image.tmdb.org/t/p/original/rDzig50dj7VpLwJ7SThbamETK1G.jpg"
   },
   {
-    "title": "X-Men '97",
-    "type": "series",
-    "imdbId": "tt16026746",
-    "id": "marlve_tt16026746",
-    "releaseYear": "2024",
-    "poster": "https://image.tmdb.org/t/p/original/9Ycz7yYRf9V4jk3YXwcZhFtbNcF.jpg"
-  },
-  {
     "title": "LEGO Avengers: Mission Demolition",
     "type": "movie",
     "imdbId": "tt33653255",
     "id": "marvel_tt33653255",
     "releaseYear": "2024",
     "poster": "https://image.tmdb.org/t/p/original/goFO9r09JXotKRcawP46jhPX2H0.jpg"
+  },
+  {
+    "title": "Spidey and His Amazing Friends",
+    "type": "series",
+    "imdbId": "tt10862280",
+    "id": "marvel_tt10862280",
+    "releaseYear": "2021",
+    "poster": "https://image.tmdb.org/t/p/original/dA4S18rnLx4sWW8agmLLKUvRM7n.jpg"
+  },
+  {
+    "title": "Hit-Monkey",
+    "type": "series",
+    "imdbId": "tt9811316",
+    "id": "marlve_tt9811316",
+    "releaseYear": "2021",
+    "poster": "https://image.tmdb.org/t/p/original/1aK7hApRSDUv8xxDQXyQil7qBjN.jpg"
+  },
+  {
+    "title": "X-Men '97",
+    "type": "series",
+    "imdbId": "tt16026746",
+    "id": "marlve_tt16026746",
+    "releaseYear": "2024",
+    "poster": "https://image.tmdb.org/t/p/original/9Ycz7yYRf9V4jk3YXwcZhFtbNcF.jpg"
   },
   {
     "title": "Your Friendly Neighborhood Spider-Man",
