@@ -81,23 +81,19 @@ async function fetchAdditionalData(item) {
   }
 }
 
-// Função para ordenar os dados de acordo com a data de lançamento
+// Função para ordenar dados por data de lançamento
 function sortByReleaseDate(data, order = 'desc') {
   return data.sort((a, b) => {
-    const dateA = new Date(a.releaseYear);
-    const dateB = new Date(b.releaseYear);
-    
-    if (order === 'asc') {
-      return dateA - dateB; // Novo para Velho
-    } else {
-      return dateB - dateA; // Velho para Novo
-    }
+    const dateA = new Date(a.releaseInfo);
+    const dateB = new Date(b.releaseInfo);
+
+    return order === 'asc' ? dateA - dateB : dateB - dateA;
   });
 }
 
-// Modificar o catalogHandler
+// Definição do catálogo
 builder.defineCatalogHandler(async ({ type, id, extra }) => {
-  console.log(`Catalog requested - Type: ${type}, ID: ${id}`);
+  console.log(`Catalog requested - Type: ${type}, ID: ${id}, Extra: ${JSON.stringify(extra)}`);
 
   // Retorna o catálogo em cache, se disponível
   if (cachedCatalog[id]) {
@@ -106,36 +102,34 @@ builder.defineCatalogHandler(async ({ type, id, extra }) => {
   }
 
   let dataSource;
-
-  // Escolher a fonte de dados com base no id
   if (id === 'marvel-mcu') {
-    dataSource = chronologicalData; // Dados em ordem cronológica
+    dataSource = chronologicalData; // Usar dados em ordem cronológica
   } else if (id === 'release-order') {
-    dataSource = releaseData; // Dados na ordem de lançamento
+    dataSource = releaseData; // Usar dados na ordem de lançamento
   } else if (id === 'xmen') {
-    dataSource = xmenData; // Dados de X-Men
+    dataSource = xmenData; // Usar dados de xmen
   } else if (id === 'movies') {
-    dataSource = moviesData; // Dados de filmes
+    dataSource = moviesData; // Usar dados de filmes
   } else if (id === 'series') {
-    dataSource = seriesData; // Dados de séries
+    dataSource = seriesData; // Usar dados de séries
   } else if (id === 'animations') {
-    dataSource = animationsData; // Dados de animações
+    dataSource = animationsData; // Usar dados de animações
   } else {
     return Promise.resolve({ metas: [] }); // Retorna vazio se o ID não for reconhecido
   }
 
-  // Determina a ordem com base no parâmetro 'extra' passado (por exemplo, "new-to-old" ou "old-to-new")
-  const sortOrder = extra && extra.sortOrder === 'new-to-old' ? 'asc' : 'desc';
+  // Verifica a ordenação do catálogo
+  const sortOrder = extra?.sortOrder || 'desc'; // 'asc' para new to old, 'desc' para old to new
 
-  // Ordena os dados conforme a ordem solicitada
-  const sortedData = sortByReleaseDate(dataSource, sortOrder); // Garante que seja "new to old" ou "old to new"
+  // Ordena os dados conforme o parâmetro de ordenação, se necessário
+  const sortedData = id === 'release-order' ? sortByReleaseDate(dataSource, sortOrder) : dataSource;
 
   // Processa os dados para gerar o catálogo
   const metas = await Promise.all(
     sortedData.map(fetchAdditionalData)
   );
 
-  // Filtra itens nulos (que falharam ao buscar dados)
+  // Filtra itens nulos (que falharam)
   const validMetas = metas.filter(item => item !== null);
   console.log(`✅ Catálogo gerado com ${validMetas.length} itens para ID: ${id}`);
 
