@@ -1,11 +1,11 @@
 const { addonBuilder, serveHTTP } = require('stremio-addon-sdk');
 const axios = require('axios');
-const chronologicalData = require('../Data/chronologicalData'); // Dados em ordem cronológica
-const releaseData = require('../Data/releaseData'); // Dados em ordem de lançamento
-const moviesData = require('../Data/moviesData'); // Dados dos Filmes
-const seriesData = require('../Data/seriesData'); // Dados das Series
-const animationsData = require('../Data/animationsData'); // Dados das animações
-const xmenData = require('../Data/xmenData'); // Dados X-Men
+const chronologicalData = require('../Data/chronologicalData');
+const releaseData = require('../Data/releaseData');
+const moviesData = require('../Data/moviesData');
+const seriesData = require('../Data/seriesData');
+const animationsData = require('../Data/animationsData');
+const xmenData = require('../Data/xmenData');
 const { tmdbKey, omdbKey, port } = require('./config');
 
 const express = require('express');
@@ -48,19 +48,14 @@ async function fetchAdditionalData(item) {
     const omdbData = omdbRes.data || {};
     const tmdbData = tmdbRes.data?.results?.[0] || {};
 
-    // Prioriza o poster definido no item ou no TMDB, em vez do Cinemeta
     let poster = null;
     if (item.poster) {
-      // Usa sempre o poster manual
       poster = item.poster;
     } else if (tmdbData.poster_path) {
-      // Se não tiver no ficheiro, usa o poster do TMDB
       poster = `https://image.tmdb.org/t/p/w500${tmdbData.poster_path}`;
     } else if (omdbData.Poster && omdbData.Poster !== 'N/A') {
-      // Caso não tenha poster no TMDB, usa o do OMDb
       poster = omdbData.Poster;
     } else {
-      // Fallback fixo
       poster = 'https://m.media-amazon.com/images/M/MV5BMTc5MDE2ODcwNV5BMl5BanBnXkFtZTgwMzI2NzQ2NzM@._V1_SX300.jpg';
       console.warn(`No poster found for ${item.title} (${item.imdbId}), using fallback.`);
     }
@@ -77,7 +72,7 @@ async function fetchAdditionalData(item) {
     };
   } catch (err) {
     console.error(`Error processing ${item.title} (${item.imdbId}): ${err.message}`);
-    return null; // Retorna null para itens com erro, será filtrado depois
+    return null;
   }
 }
 
@@ -86,7 +81,6 @@ function sortByReleaseDate(data, order = 'desc') {
   return data.sort((a, b) => {
     const dateA = new Date(a.releaseInfo);
     const dateB = new Date(b.releaseInfo);
-
     return order === 'asc' ? dateA - dateB : dateB - dateA;
   });
 }
@@ -95,48 +89,54 @@ function sortByReleaseDate(data, order = 'desc') {
 builder.defineCatalogHandler(async ({ type, id, extra }) => {
   console.log(`Catalog requested - Type: ${type}, ID: ${id}, Extra: ${JSON.stringify(extra)}`);
 
-  // Retorna o catálogo em cache, se disponível
-  if (cachedCatalog[id]) {
+  if (cachedCatalog[id] && (!extra || !extra.subcategory)) {
     console.log(`✅ Retornando catálogo do cache para ID: ${id}`);
     return cachedCatalog[id];
   }
 
   let dataSource;
   if (id === 'marvel-mcu') {
-    dataSource = chronologicalData; // Usar dados em ordem cronológica
+    dataSource = chronologicalData;
   } else if (id === 'release-order') {
-    dataSource = releaseData; // Usar dados na ordem de lançamento
+    dataSource = releaseData;
   } else if (id === 'xmen') {
-    dataSource = xmenData; // Usar dados de xmen
+    dataSource = xmenData;
   } else if (id === 'movies') {
-    dataSource = moviesData; // Usar dados de filmes
+    dataSource = moviesData;
   } else if (id === 'series') {
-    dataSource = seriesData; // Usar dados de séries
+    dataSource = seriesData;
   } else if (id === 'animations') {
-    dataSource = animationsData; // Usar dados de animações
+    dataSource = animationsData;
   } else {
-    return Promise.resolve({ metas: [] }); // Retorna vazio se o ID não for reconhecido
+    return Promise.resolve({ metas: [] });
   }
 
-  // Verifica a ordenação do catálogo
-  const sortOrder = extra?.sortOrder || 'desc'; // 'asc' para new to old, 'desc' para old to new
+  // Filtra por subcategoria se fornecida
+  let filteredData = [...dataSource];
+  if (id === 'release-order' && extra?.subcategory) {
+    if (extra.subcategory === 'new') {
+      // Filtra para itens "new" (exemplo: filmes lançados após 2019)
+      filteredData = filteredData.filter(item => new Date(item.releaseInfo) > new Date('2019-01-01'));
+    } else if (extra.subcategory === 'old') {
+      // Filtra para itens "old" (exemplo: filmes lançados antes de 2019)
+      filteredData = filteredData.filter(item => new Date(item.releaseInfo) <= new Date('2019-01-01'));
+    }
+  }
 
-  // Ordena os dados conforme o parâmetro de ordenação, se necessário
-  const sortedData = id === 'release-order' ? sortByReleaseDate(dataSource, sortOrder) : dataSource;
+  // Ordena os dados se for "release-order"
+  const sortOrder = extra?.sortOrder || 'desc';
+  const sortedData = id === 'release-order' ? sortByReleaseDate(filteredData, sortOrder) : filteredData;
 
   // Processa os dados para gerar o catálogo
-  const metas = await Promise.all(
-    sortedData.map(fetchAdditionalData)
-  );
-
-  // Filtra itens nulos (que falharam)
+  const metas = await Promise.all(sortedData.map(fetchAdditionalData));
   const validMetas = metas.filter(item => item !== null);
   console.log(`✅ Catálogo gerado com ${validMetas.length} itens para ID: ${id}`);
 
-  // Armazena o catálogo em cache por ID
-  cachedCatalog[id] = { metas: validMetas };
+  // Armazena o catálogo em cache por ID e subcategoria (se aplicável)
+  const cacheKey = id + (extra?.subcategory ? `_${extra.subcategory}` : '');
+  cachedCatalog[cacheKey] = { metas: validMetas };
 
-  return cachedCatalog[id];
+  return cachedCatalog[cacheKey];
 });
 
 // Configuração do servidor
@@ -146,5 +146,5 @@ const addonInterface = builder.getInterface();
 console.log('Starting server...');
 serveHTTP(addonInterface, {
   port,
-  beforeMiddleware: app // aplica compression e cache
+  beforeMiddleware: app
 });
