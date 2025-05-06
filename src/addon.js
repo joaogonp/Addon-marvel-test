@@ -128,3 +128,11 @@ builder.defineCatalogHandler(async ({ type, id, extra }) => {
 });
 
 // Configuração do servidor
+console.log('Initializing addon interface...');
+const addonInterface = builder.getInterface();
+
+console.log('Starting server...');
+serveHTTP(addonInterface, {
+  port,
+  beforeMiddleware: app // aplica compression e cache
+});
