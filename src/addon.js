@@ -102,6 +102,8 @@ builder.defineCatalogHandler(async ({ type, id }) => {
     dataSource = seriesData; // Usar dados de séries
   } else if (id === 'animations') {
     dataSource = animationsData; // Usar dados de animações
+  } else if (id === 'xmen') {
+    dataSource = xmenData; // Usar dados de xmen
   }  else {
     return Promise.resolve({ metas: [] }); // Retorna vazio se o ID não for reconhecido
   }
