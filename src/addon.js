@@ -24,7 +24,7 @@ app.use((req, res, next) => {
 console.log('Starting Marvel Addon v1.0.1...');
 const builder = new addonBuilder(require('./manifest.json'));
 
-// Variável para armazenar o cache separado por ID
+// Variável para armazenar o cache separado por ID e subcategoria
 let cachedCatalog = {};
 
 // Função para buscar dados adicionais (OMDb e TMDb)
@@ -66,7 +66,7 @@ async function fetchAdditionalData(item) {
       name: item.type === 'series' ? item.title.replace(/ Season \d+/, '') : item.title,
       poster: poster,
       description: tmdbData.overview || omdbData.Plot || 'No description available',
-      releaseInfo: item.releaseYear,
+      releaseInfo: item.releaseInfo || item.releaseYear,
       imdbRating: omdbData.imdbRating || 'N/A',
       genres: tmdbData.genres ? tmdbData.genres.map(g => g.name) : ['Action', 'Adventure']
     };
@@ -79,8 +79,8 @@ async function fetchAdditionalData(item) {
 // Função para ordenar dados por data de lançamento
 function sortByReleaseDate(data, order = 'desc') {
   return data.sort((a, b) => {
-    const dateA = new Date(a.releaseInfo);
-    const dateB = new Date(b.releaseInfo);
+    const dateA = new Date(a.releaseInfo || a.releaseYear);
+    const dateB = new Date(b.releaseInfo || b.releaseYear);
     return order === 'asc' ? dateA - dateB : dateB - dateA;
   });
 }
@@ -89,9 +89,11 @@ function sortByReleaseDate(data, order = 'desc') {
 builder.defineCatalogHandler(async ({ type, id, extra }) => {
   console.log(`Catalog requested - Type: ${type}, ID: ${id}, Extra: ${JSON.stringify(extra)}`);
 
-  if (cachedCatalog[id] && (!extra || !extra.subcategory)) {
-    console.log(`✅ Retornando catálogo do cache para ID: ${id}`);
-    return cachedCatalog[id];
+  // Determina o cache key com base no ID e subcategoria
+  const cacheKey = id + (extra?.subcategory ? `_${extra.subcategory}` : '');
+  if (cachedCatalog[cacheKey]) {
+    console.log(`✅ Retornando catálogo do cache para ID: ${cacheKey}`);
+    return cachedCatalog[cacheKey];
   }
 
   let dataSource;
@@ -111,29 +113,23 @@ builder.defineCatalogHandler(async ({ type, id, extra }) => {
     return Promise.resolve({ metas: [] });
   }
 
-  // Filtra por subcategoria se fornecida
-  let filteredData = [...dataSource];
-  if (id === 'release-order' && extra?.subcategory) {
-    if (extra.subcategory === 'new') {
-      // Filtra para itens "new" (exemplo: filmes lançados após 2019)
-      filteredData = filteredData.filter(item => new Date(item.releaseInfo) > new Date('2019-01-01'));
-    } else if (extra.subcategory === 'old') {
-      // Filtra para itens "old" (exemplo: filmes lançados antes de 2019)
-      filteredData = filteredData.filter(item => new Date(item.releaseInfo) <= new Date('2019-01-01'));
-    }
+  // Define a ordem com base na subcategoria
+  let sortOrder = 'desc'; // Padrão: mais recentes primeiro
+  if (id === 'release-order' && extra?.subcategory === 'old') {
+    sortOrder = 'asc'; // Mais antigos primeiro para "Old"
+  } else if (id === 'release-order' && extra?.subcategory === 'new') {
+    sortOrder = 'desc'; // Mais recentes primeiro para "New"
   }
 
-  // Ordena os dados se for "release-order"
-  const sortOrder = extra?.sortOrder || 'desc';
-  const sortedData = id === 'release-order' ? sortByReleaseDate(filteredData, sortOrder) : filteredData;
+  // Ordena os dados
+  const sortedData = sortByReleaseDate([...dataSource], sortOrder);
 
   // Processa os dados para gerar o catálogo
   const metas = await Promise.all(sortedData.map(fetchAdditionalData));
   const validMetas = metas.filter(item => item !== null);
-  console.log(`✅ Catálogo gerado com ${validMetas.length} itens para ID: ${id}`);
+  console.log(`✅ Catálogo gerado com ${validMetas.length} itens para ID: ${id}, Subcategory: ${extra?.subcategory}`);
 
-  // Armazena o catálogo em cache por ID e subcategoria (se aplicável)
-  const cacheKey = id + (extra?.subcategory ? `_${extra.subcategory}` : '');
+  // Armazena o catálogo em cache
   cachedCatalog[cacheKey] = { metas: validMetas };
 
   return cachedCatalog[cacheKey];
