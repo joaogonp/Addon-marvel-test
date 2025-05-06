@@ -12,7 +12,7 @@
       "name": "Chronologically Order"
     },
     {
-      "type": "movies",
+      "type": "Marvel",
       "id": "release-order",
       "name": "Release Order (Marvel)",
       "subcatalogs": [
@@ -24,7 +24,24 @@
           "id": "old",
           "name": "Old (Oldest First)"
         }
-      ]
+      ],
+      "extraSupported": ["sort"],
+      "extra": [
+        {
+          "name": "sort",
+          "options": ["new", "old"],
+          "isRequired": false,
+          "default": "new",
+          "optionLabels": {
+            "new": "New (Recent First)",
+            "old": "Old (Oldest First)"
+          }
+        }
+      ],
+      "behaviorHints": {
+        "orderHint": 2,
+        "defaultSubcatalog": "new"
+      }
     },
     {
       "type": "Marvel",
