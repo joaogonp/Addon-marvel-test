@@ -15,6 +15,7 @@
       "type": "Marvel",
       "id": "release-order",
       "name": "Release Order",
+      "extraSupported": ["sortOrder"],
       "extra": [
         {
           "name": "sortOrder",
