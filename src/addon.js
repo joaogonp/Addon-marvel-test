@@ -24,7 +24,7 @@ app.use((req, res, next) => {
 console.log('Starting Marvel Addon v1.0.1...');
 const builder = new addonBuilder(require('./manifest.json'));
 
-// Variável para armazenar o cache separado por ID e sortOrder
+// Variável para armazenar o cache separado por ID e sort
 let cachedCatalog = {};
 
 // Função para buscar dados adicionais (OMDb e TMDb)
@@ -89,8 +89,8 @@ function sortByReleaseDate(data, order = 'desc') {
 builder.defineCatalogHandler(async ({ type, id, extra }) => {
   console.log(`Catalog requested - Type: ${type}, ID: ${id}, Extra: ${JSON.stringify(extra)}`);
 
-  // Determina o cache key com base no ID e sortOrder
-  const cacheKey = id + (extra?.sortOrder ? `_${extra.sortOrder.toLowerCase()}` : '');
+  // Determina o cache key com base no ID e sort
+  const cacheKey = id + (extra?.sort ? `_${extra.sort}` : '');
   if (cachedCatalog[cacheKey]) {
     console.log(`✅ Retornando catálogo do cache para ID: ${cacheKey}`);
     return cachedCatalog[cacheKey];
@@ -113,17 +113,17 @@ builder.defineCatalogHandler(async ({ type, id, extra }) => {
     return Promise.resolve({ metas: [] });
   }
 
-  // Define a ordem com base no filtro sortOrder
+  // Define a ordem com base no filtro sort
   let sortOrder = 'desc'; // Padrão: mais recentes primeiro
   if (id === 'release-order') {
-    if (extra?.sortOrder === 'Old') {
-      sortOrder = 'asc'; // Mais antigos primeiro para "Old"
-      console.log('Applying sortOrder: asc (Old)');
-    } else if (extra?.sortOrder === 'New') {
-      sortOrder = 'desc'; // Mais recentes primeiro para "New"
-      console.log('Applying sortOrder: desc (New)');
+    if (extra?.sort === 'old') {
+      sortOrder = 'asc'; // Mais antigos primeiro para "old"
+      console.log('Applying sort: asc (old)');
+    } else if (extra?.sort === 'new') {
+      sortOrder = 'desc'; // Mais recentes primeiro para "new"
+      console.log('Applying sort: desc (new)');
     } else {
-      console.log('No sortOrder specified, using default: desc');
+      console.log('No sort specified, using default: desc');
     }
   }
 
@@ -133,7 +133,7 @@ builder.defineCatalogHandler(async ({ type, id, extra }) => {
   // Processa os dados para gerar o catálogo
   const metas = await Promise.all(sortedData.map(fetchAdditionalData));
   const validMetas = metas.filter(item => item !== null);
-  console.log(`✅ Catálogo gerado com ${validMetas.length} itens para ID: ${id}, SortOrder: ${extra?.sortOrder || 'default'}`);
+  console.log(`✅ Catálogo gerado com ${validMetas.length} itens para ID: ${id}, Sort: ${extra?.sort || 'default'}`);
 
   // Armazena o catálogo em cache
   cachedCatalog[cacheKey] = { metas: validMetas };
