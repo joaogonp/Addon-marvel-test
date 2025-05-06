@@ -14,7 +14,17 @@
     {
       "type": "Marvel",
       "id": "release-order",
-      "name": "Release Order"
+      "name": "Release Order",
+      "subcategories": [
+        {
+          "id": "new",
+          "name": "New"
+        },
+        {
+          "id": "old",
+          "name": "Old"
+        }
+      ]
     },
     {
       "type": "Marvel",
