@@ -118,8 +118,12 @@ builder.defineCatalogHandler(async ({ type, id, extra }) => {
   if (id === 'release-order') {
     if (extra?.sortOrder === 'Old') {
       sortOrder = 'asc'; // Mais antigos primeiro para "Old"
+      console.log('Applying sortOrder: asc (Old)');
     } else if (extra?.sortOrder === 'New') {
       sortOrder = 'desc'; // Mais recentes primeiro para "New"
+      console.log('Applying sortOrder: desc (New)');
+    } else {
+      console.log('No sortOrder specified, using default: desc');
     }
   }
 
