@@ -24,7 +24,7 @@ app.use((req, res, next) => {
 console.log('Starting Marvel Addon v1.0.1...');
 const builder = new addonBuilder(require('./manifest.json'));
 
-// Variável para armazenar o cache separado por ID e sort
+// Variável para armazenar o cache separado por ID e subcatalog
 let cachedCatalog = {};
 
 // Função para buscar dados adicionais (OMDb e TMDb)
@@ -89,64 +89,42 @@ function sortByReleaseDate(data, order = 'desc') {
 builder.defineCatalogHandler(async ({ type, id, extra }) => {
   console.log(`Catalog requested - Type: ${type}, ID: ${id}, Extra: ${JSON.stringify(extra)}`);
 
-  // Determina o cache key com base no ID e sort
-  const cacheKey = id + (extra?.sort ? `_${extra.sort}` : '');
+  const cacheKey = id + (extra?.subcatalog ? `_${extra.subcatalog}` : '');
   if (cachedCatalog[cacheKey]) {
     console.log(`✅ Retornando catálogo do cache para ID: ${cacheKey}`);
     return cachedCatalog[cacheKey];
   }
 
   let dataSource;
-  if (id === 'marvel-mcu') {
+  if (type === 'Marvel' && id === 'marvel-mcu') {
     dataSource = chronologicalData;
-  } else if (id === 'release-order') {
+  } else if (type === 'movies' && id === 'release-order') {
     dataSource = releaseData;
-  } else if (id === 'xmen') {
+    if (extra?.subcatalog === 'old') {
+      dataSource = sortByReleaseDate([...dataSource], 'asc');
+      console.log('Applying sort: asc (old)');
+    } else if (extra?.subcatalog === 'new' || !extra?.subcatalog) {
+      dataSource = sortByReleaseDate([...dataSource], 'desc');
+      console.log('Applying sort: desc (new or default)');
+    }
+  } else if (type === 'Marvel' && id === 'xmen') {
     dataSource = xmenData;
-  } else if (id === 'movies') {
+  } else if (type === 'Marvel' && id === 'movies') {
     dataSource = moviesData;
-  } else if (id === 'series') {
+  } else if (type === 'Marvel' && id === 'series') {
     dataSource = seriesData;
-  } else if (id === 'animations') {
+  } else if (type === 'Marvel' && id === 'animations') {
     dataSource = animationsData;
   } else {
     return Promise.resolve({ metas: [] });
   }
 
-  // Define a ordem com base no filtro sort
-  let sortOrder = 'desc'; // Padrão: mais recentes primeiro
-  if (id === 'release-order') {
-    if (extra?.sort === 'old') {
-      sortOrder = 'asc'; // Mais antigos primeiro para "old"
-      console.log('Applying sort: asc (old)');
-    } else if (extra?.sort === 'new') {
-      sortOrder = 'desc'; // Mais recentes primeiro para "new"
-      console.log('Applying sort: desc (new)');
-    } else {
-      console.log('No sort specified, using default: desc');
-    }
-  }
-
-  // Ordena os dados apenas para release-order
-  const sortedData = id === 'release-order' ? sortByReleaseDate([...dataSource], sortOrder) : dataSource;
-
-  // Processa os dados para gerar o catálogo
-  const metas = await Promise.all(sortedData.map(fetchAdditionalData));
+  const metas = await Promise.all(dataSource.map(fetchAdditionalData));
   const validMetas = metas.filter(item => item !== null);
-  console.log(`✅ Catálogo gerado com ${validMetas.length} itens for ID: ${id}, Sort: ${extra?.sort || 'default'}`);
+  console.log(`✅ Catálogo gerado com ${validMetas.length} itens for ID: ${id}, Subcatalog: ${extra?.subcatalog || 'default'}`);
 
-  // Armazena o catálogo em cache
   cachedCatalog[cacheKey] = { metas: validMetas };
-
   return cachedCatalog[cacheKey];
 });
 
 // Configuração do servidor
-console.log('Initializing addon interface...');
-const addonInterface = builder.getInterface();
-
-console.log('Starting server...');
-serveHTTP(addonInterface, {
-  port,
-  beforeMiddleware: app
-});
