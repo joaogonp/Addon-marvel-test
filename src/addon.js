@@ -98,7 +98,7 @@ builder.defineCatalogHandler(async ({ type, id, extra }) => {
   let dataSource;
   if (type === 'Marvel' && id === 'marvel-mcu') {
     dataSource = chronologicalData;
-  } else if (type === 'movies' && id === 'release-order') {
+  } else if (type === 'Marvel' && id === 'release-order') {
     dataSource = releaseData;
     if (extra?.subcatalog === 'old') {
       dataSource = sortByReleaseDate([...dataSource], 'asc');
