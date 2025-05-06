@@ -96,7 +96,7 @@ function sortByReleaseDate(data, order = 'desc') {
 }
 
 // Modificar o catalogHandler
-builder.defineCatalogHandler(async ({ type, id }) => {
+builder.defineCatalogHandler(async ({ type, id, extra }) => {
   console.log(`Catalog requested - Type: ${type}, ID: ${id}`);
 
   // Retorna o catálogo em cache, se disponível
@@ -124,8 +124,11 @@ builder.defineCatalogHandler(async ({ type, id }) => {
     return Promise.resolve({ metas: [] }); // Retorna vazio se o ID não for reconhecido
   }
 
-  // Sempre ordena os dados como "old to new" (velho para novo)
-  const sortedData = sortByReleaseDate(dataSource, 'desc'); // Garante que seja sempre velho para novo
+  // Determina a ordem com base no parâmetro 'extra' passado (por exemplo, "new-to-old" ou "old-to-new")
+  const sortOrder = extra && extra.sortOrder === 'new-to-old' ? 'asc' : 'desc';
+
+  // Ordena os dados conforme a ordem solicitada
+  const sortedData = sortByReleaseDate(dataSource, sortOrder); // Garante que seja "new to old" ou "old to new"
 
   // Processa os dados para gerar o catálogo
   const metas = await Promise.all(
