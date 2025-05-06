@@ -96,14 +96,14 @@ builder.defineCatalogHandler(async ({ type, id }) => {
     dataSource = chronologicalData; // Usar dados em ordem cronológica
   } else if (id === 'release-order') {
     dataSource = releaseData; // Usar dados na ordem de lançamento
+  } else if (id === 'xmen') {
+    dataSource = xmenData; // Usar dados de xmen
   } else if (id === 'movies') {
     dataSource = moviesData; // Usar dados de filmes
   } else if (id === 'series') {
     dataSource = seriesData; // Usar dados de séries
   } else if (id === 'animations') {
     dataSource = animationsData; // Usar dados de animações
-  } else if (id === 'xmen') {
-    dataSource = xmenData; // Usar dados de xmen
   }  else {
     return Promise.resolve({ metas: [] }); // Retorna vazio se o ID não for reconhecido
   }
