@@ -22,6 +22,6 @@ module.exports = [
     "id": "marvel_tt0077031",
     "releaseYear": "1977",
     "poster": "https://image.tmdb.org/t/p/original/8q7uFuNuMWTWfcpnCpBuZa3KZXx.jpg"
-  }.
+  },
 ];
 
