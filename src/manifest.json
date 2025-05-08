@@ -23,7 +23,7 @@
           "name": "genre",
           "options": ["new"],
           "isRequired": false,
-          "default": null, // Remove default para usar a ordem original no Top
+          "default": null,
           "optionLabels": {
             "new": "New to Old"
           }
