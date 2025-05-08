@@ -90,7 +90,7 @@ function sortByReleaseDate(data, order = 'desc') {
     const isTBA_B = dateB === 'TBA' || dateB === null || isNaN(new Date(dateB).getTime());
 
     if (isTBA_A && isTBA_B) return 0; // Mantém a ordem original se ambos forem TBA
-    if (isTBA_A) return order === 'asc' ? 1 : -1; // TBA vai para o final em ascendente, início em descendente
+    if (isTBA_A) return order === 'asc' ? 1 : -1; // TBA no final em ascendente, início em descendente
     if (isTBA_B) return order === 'asc' ? -1 : 1;
 
     const timeA = new Date(dateA).getTime();
@@ -122,16 +122,8 @@ builder.defineCatalogHandler(async ({ type, id, extra }) => {
       console.log('Release Order - Using default order from data for Top');
     }
   } else if (type === 'Marvel' && id === 'xmen') {
-    dataSource = xmenData;
-    if (extra?.genre === 'old') {
-      dataSource = sortByReleaseDate([...dataSource], 'asc');
-      console.log('X-Men - Applying sort: asc (old to new)');
-    } else if (extra?.genre === 'new') {
-      dataSource = sortByReleaseDate([...dataSource], 'desc');
-      console.log('X-Men - Applying sort: desc (new to old)');
-    } else {
-      console.log('X-Men - Using default order from data');
-    }
+    dataSource = xmenData; // Usa a ordem original de xmenData
+    console.log('X-Men - Using default order from xmenData');
   } else if (type === 'Marvel' && id === 'movies') {
     dataSource = moviesData;
     if (extra?.genre === 'new') {
@@ -141,15 +133,12 @@ builder.defineCatalogHandler(async ({ type, id, extra }) => {
       console.log('Movies - Using default order from data for Top');
     }
   } else if (type === 'Marvel' && id === 'series') {
-    dataSource = seriesData; // Usa a ordem padrão para o "Top"
-    if (extra?.genre === 'old') {
-      dataSource = sortByReleaseDate([...dataSource], 'asc');
-      console.log('Series - Applying sort: asc (old to new)');
-    } else if (extra?.genre === 'new') {
+    dataSource = seriesData; // Usa a ordem original (já Old to New)
+    if (extra?.genre === 'new') {
       dataSource = sortByReleaseDate([...dataSource], 'desc');
       console.log('Series - Applying sort: desc (new to old)');
     } else {
-      console.log('Series - Using default order from seriesData for Top');
+      console.log('Series - Using default order from seriesData for Top (already Old to New)');
     }
   } else if (type === 'Marvel' && id === 'animations') {
     dataSource = animationsData; // Usa a ordem padrão para o "Top"
