@@ -81,12 +81,21 @@ async function fetchAdditionalData(item) {
   }
 }
 
-// Função para ordenar dados por data de lançamento
+// Função para ordenar dados por data de lançamento, tratando "TBA"
 function sortByReleaseDate(data, order = 'desc') {
-  return data.sort((a, b) => {
-    const dateA = new Date(a.releaseInfo || a.releaseYear);
-    const dateB = new Date(b.releaseInfo || b.releaseYear);
-    return order === 'asc' ? dateA - dateB : dateB - dateA;
+  return [...data].sort((a, b) => {
+    const dateA = a.releaseInfo || a.releaseYear;
+    const dateB = b.releaseInfo || b.releaseYear;
+    const isTBA_A = dateA === 'TBA' || dateA === null || isNaN(new Date(dateA).getTime());
+    const isTBA_B = dateB === 'TBA' || dateB === null || isNaN(new Date(dateB).getTime());
+
+    if (isTBA_A && isTBA_B) return 0; // Mantém a ordem original se ambos forem TBA
+    if (isTBA_A) return order === 'asc' ? 1 : -1; // TBA vai para o final em ascendente, início em descendente
+    if (isTBA_B) return order === 'asc' ? -1 : 1;
+
+    const timeA = new Date(dateA).getTime();
+    const timeB = new Date(dateB).getTime();
+    return order === 'asc' ? timeA - timeB : timeB - timeA;
   });
 }
 
@@ -106,14 +115,11 @@ builder.defineCatalogHandler(async ({ type, id, extra }) => {
     console.log('Chronologically Order - Using fixed chronological order');
   } else if (type === 'Marvel' && id === 'release-order') {
     dataSource = releaseData;
-    if (extra?.genre === 'old') {
-      dataSource = sortByReleaseDate([...dataSource], 'asc');
-      console.log('Release Order - Applying sort: asc (old to new)');
-    } else if (extra?.genre === 'new') {
+    if (extra?.genre === 'new') {
       dataSource = sortByReleaseDate([...dataSource], 'desc');
       console.log('Release Order - Applying sort: desc (new to old)');
     } else {
-      console.log('Release Order - Using default order from data');
+      console.log('Release Order - Using default order from data for Top');
     }
   } else if (type === 'Marvel' && id === 'xmen') {
     dataSource = xmenData;
@@ -128,14 +134,11 @@ builder.defineCatalogHandler(async ({ type, id, extra }) => {
     }
   } else if (type === 'Marvel' && id === 'movies') {
     dataSource = moviesData;
-    if (extra?.genre === 'old') {
-      dataSource = sortByReleaseDate([...dataSource], 'asc');
-      console.log('Movies - Applying sort: asc (old to new)');
-    } else if (extra?.genre === 'new') {
+    if (extra?.genre === 'new') {
       dataSource = sortByReleaseDate([...dataSource], 'desc');
       console.log('Movies - Applying sort: desc (new to old)');
     } else {
-      console.log('Movies - Using default order from data');
+      console.log('Movies - Using default order from data for Top');
     }
   } else if (type === 'Marvel' && id === 'series') {
     dataSource = seriesData; // Usa a ordem padrão para o "Top"
