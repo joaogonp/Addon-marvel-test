@@ -109,45 +109,55 @@ builder.defineCatalogHandler(async ({ type, id, extra }) => {
     if (extra?.genre === 'old') {
       dataSource = sortByReleaseDate([...dataSource], 'asc');
       console.log('Release Order - Applying sort: asc (old to new)');
-    } else if (extra?.genre === 'new' || !extra?.genre) {
+    } else if (extra?.genre === 'new') {
       dataSource = sortByReleaseDate([...dataSource], 'desc');
       console.log('Release Order - Applying sort: desc (new to old)');
+    } else {
+      console.log('Release Order - Using default order from data');
     }
   } else if (type === 'Marvel' && id === 'xmen') {
     dataSource = xmenData;
     if (extra?.genre === 'old') {
       dataSource = sortByReleaseDate([...dataSource], 'asc');
       console.log('X-Men - Applying sort: asc (old to new)');
-    } else if (extra?.genre === 'new' || !extra?.genre) {
+    } else if (extra?.genre === 'new') {
       dataSource = sortByReleaseDate([...dataSource], 'desc');
       console.log('X-Men - Applying sort: desc (new to old)');
+    } else {
+      console.log('X-Men - Using default order from data');
     }
   } else if (type === 'Marvel' && id === 'movies') {
     dataSource = moviesData;
     if (extra?.genre === 'old') {
       dataSource = sortByReleaseDate([...dataSource], 'asc');
       console.log('Movies - Applying sort: asc (old to new)');
-    } else if (extra?.genre === 'new' || !extra?.genre) {
+    } else if (extra?.genre === 'new') {
       dataSource = sortByReleaseDate([...dataSource], 'desc');
       console.log('Movies - Applying sort: desc (new to old)');
+    } else {
+      console.log('Movies - Using default order from data');
     }
   } else if (type === 'Marvel' && id === 'series') {
     dataSource = seriesData; // Usa a ordem padrão para o "Top"
     if (extra?.genre === 'old') {
       dataSource = sortByReleaseDate([...dataSource], 'asc');
       console.log('Series - Applying sort: asc (old to new)');
-    } else if (extra?.genre === 'new' || !extra?.genre) {
+    } else if (extra?.genre === 'new') {
       dataSource = sortByReleaseDate([...dataSource], 'desc');
       console.log('Series - Applying sort: desc (new to old)');
+    } else {
+      console.log('Series - Using default order from seriesData for Top');
     }
   } else if (type === 'Marvel' && id === 'animations') {
     dataSource = animationsData; // Usa a ordem padrão para o "Top"
     if (extra?.genre === 'old') {
       dataSource = sortByReleaseDate([...dataSource], 'asc');
       console.log('Animations - Applying sort: asc (old to new)');
-    } else if (extra?.genre === 'new' || !extra?.genre) {
+    } else if (extra?.genre === 'new') {
       dataSource = sortByReleaseDate([...dataSource], 'desc');
       console.log('Animations - Applying sort: desc (new to old)');
+    } else {
+      console.log('Animations - Using default order from animationsData for Top');
     }
   } else {
     return Promise.resolve({ metas: [] });
