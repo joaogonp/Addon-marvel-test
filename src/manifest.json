@@ -20,7 +20,7 @@
       "name": "Release Order",
       "extra": [
         {
-          "name": "order", // Mudado de "genre" para "order"
+          "name": "order", 
           "options": ["new", "old"],
           "isRequired": false,
           "default": "old",
