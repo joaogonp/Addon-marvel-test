@@ -29,7 +29,7 @@ app.use((req, res, next) => {
 console.log('Starting Marvel Addon v1.0.1...');
 const builder = new addonBuilder(require('./manifest.json'));
 
-// Variável para armazenar o cache separado por ID e order
+// Variável para armazenar o cache separado por ID e genre
 let cachedCatalog = {};
 
 // Função para buscar dados adicionais (OMDb e TMDb)
@@ -94,7 +94,7 @@ function sortByReleaseDate(data, order = 'desc') {
 builder.defineCatalogHandler(async ({ type, id, extra }) => {
   console.log(`Catalog requested - Type: ${type}, ID: ${id}, Extra: ${JSON.stringify(extra)}`);
 
-  const cacheKey = id + (extra?.order ? `_${extra.order}` : '');
+  const cacheKey = id + (extra?.genre ? `_${extra.genre}` : '');
   if (cachedCatalog[cacheKey]) {
     console.log(`✅ Retornando catálogo do cache para ID: ${cacheKey}`);
     return cachedCatalog[cacheKey];
@@ -102,31 +102,60 @@ builder.defineCatalogHandler(async ({ type, id, extra }) => {
 
   let dataSource;
   if (type === 'Marvel' && id === 'marvel-mcu') {
-    dataSource = chronologicalData;
+    dataSource = chronologicalData; // Sem ordenação adicional, usa ordem fixa
+    console.log('Chronologically Order - Using fixed chronological order');
   } else if (type === 'Marvel' && id === 'release-order') {
     dataSource = releaseData;
-    if (extra?.order === 'old') {
+    if (extra?.genre === 'old') {
       dataSource = sortByReleaseDate([...dataSource], 'asc');
-      console.log('Applying sort: asc (old to new) for Release Order');
-    } else if (extra?.order === 'new' || !extra?.order) {
+      console.log('Release Order - Applying sort: asc (old to new)');
+    } else if (extra?.genre === 'new' || !extra?.genre) {
       dataSource = sortByReleaseDate([...dataSource], 'desc');
-      console.log('Applying sort: desc (new to old) for Release Order');
+      console.log('Release Order - Applying sort: desc (new to old)');
     }
   } else if (type === 'Marvel' && id === 'xmen') {
     dataSource = xmenData;
+    if (extra?.genre === 'old') {
+      dataSource = sortByReleaseDate([...dataSource], 'asc');
+      console.log('X-Men - Applying sort: asc (old to new)');
+    } else if (extra?.genre === 'new' || !extra?.genre) {
+      dataSource = sortByReleaseDate([...dataSource], 'desc');
+      console.log('X-Men - Applying sort: desc (new to old)');
+    }
   } else if (type === 'Marvel' && id === 'movies') {
     dataSource = moviesData;
+    if (extra?.genre === 'old') {
+      dataSource = sortByReleaseDate([...dataSource], 'asc');
+      console.log('Movies - Applying sort: asc (old to new)');
+    } else if (extra?.genre === 'new' || !extra?.genre) {
+      dataSource = sortByReleaseDate([...dataSource], 'desc');
+      console.log('Movies - Applying sort: desc (new to old)');
+    }
   } else if (type === 'Marvel' && id === 'series') {
-    dataSource = seriesData;
+    dataSource = seriesData; // Usa a ordem padrão para o "Top"
+    if (extra?.genre === 'old') {
+      dataSource = sortByReleaseDate([...dataSource], 'asc');
+      console.log('Series - Applying sort: asc (old to new)');
+    } else if (extra?.genre === 'new' || !extra?.genre) {
+      dataSource = sortByReleaseDate([...dataSource], 'desc');
+      console.log('Series - Applying sort: desc (new to old)');
+    }
   } else if (type === 'Marvel' && id === 'animations') {
-    dataSource = animationsData;
+    dataSource = animationsData; // Usa a ordem padrão para o "Top"
+    if (extra?.genre === 'old') {
+      dataSource = sortByReleaseDate([...dataSource], 'asc');
+      console.log('Animations - Applying sort: asc (old to new)');
+    } else if (extra?.genre === 'new' || !extra?.genre) {
+      dataSource = sortByReleaseDate([...dataSource], 'desc');
+      console.log('Animations - Applying sort: desc (new to old)');
+    }
   } else {
     return Promise.resolve({ metas: [] });
   }
 
   const metas = await Promise.all(dataSource.map(fetchAdditionalData));
   const validMetas = metas.filter(item => item !== null);
-  console.log(`✅ Catálogo gerado com ${validMetas.length} itens for ID: ${id}, Order: ${extra?.order || 'default'}`);
+  console.log(`✅ Catálogo gerado com ${validMetas.length} itens for ID: ${id}, Genre: ${extra?.genre || 'default'}`);
 
   cachedCatalog[cacheKey] = { metas: validMetas };
   return cachedCatalog[cacheKey];
