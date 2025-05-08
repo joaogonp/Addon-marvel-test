@@ -1,7 +1,6 @@
 const { addonBuilder, serveHTTP } = require('stremio-addon-sdk');
 const axios = require('axios');
 const chronologicalData = require('../Data/chronologicalData');
-const releaseData = require('../Data/releaseData');
 const moviesData = require('../Data/moviesData');
 const seriesData = require('../Data/seriesData');
 const animationsData = require('../Data/animationsData');
@@ -111,15 +110,15 @@ builder.defineCatalogHandler(async ({ type, id, extra }) => {
 
   let dataSource;
   if (type === 'Marvel' && id === 'marvel-mcu') {
-    dataSource = chronologicalData; // Sem ordenação adicional, usa ordem fixa
-    console.log('Chronologically Order - Using fixed chronological order');
-  } else if (type === 'Marvel' && id === 'release-order') {
-    dataSource = releaseData;
-    if (extra?.genre === 'new') {
+    dataSource = chronologicalData; // Usa a ordem original para o "Top"
+    if (extra?.genre === 'old') {
+      dataSource = sortByReleaseDate([...dataSource], 'asc');
+      console.log('Chronologically Order - Applying sort: asc (old to new)');
+    } else if (extra?.genre === 'new') {
       dataSource = sortByReleaseDate([...dataSource], 'desc');
-      console.log('Release Order - Applying sort: desc (new to old)');
+      console.log('Chronologically Order - Applying sort: desc (new to old)');
     } else {
-      console.log('Release Order - Using default order from data for Top');
+      console.log('Chronologically Order - Using default chronological order from data for Top');
     }
   } else if (type === 'Marvel' && id === 'xmen') {
     dataSource = xmenData; // Usa a ordem original de xmenData
