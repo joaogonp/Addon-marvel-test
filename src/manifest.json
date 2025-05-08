@@ -9,7 +9,10 @@
     {
       "type": "Marvel",
       "id": "marvel-mcu",
-      "name": "Chronologically Order"
+      "name": "Chronologically Order",
+      "behaviorHints": {
+        "orderHint": 1
+      }
     },
     {
       "type": "Marvel",
@@ -17,10 +20,10 @@
       "name": "Release Order",
       "extra": [
         {
-          "name": "genre",
+          "name": "order", // Mudado de "genre" para "order"
           "options": ["new", "old"],
           "isRequired": false,
-          "default": "new",
+          "default": "old",
           "optionLabels": {
             "new": "New (Recent First)",
             "old": "Old (Oldest First)"
@@ -34,22 +37,34 @@
     {
       "type": "Marvel",
       "id": "xmen",
-      "name": "X-Men"
+      "name": "X-Men",
+      "behaviorHints": {
+        "orderHint": 3
+      }
     },
     {
       "type": "Marvel",
       "id": "movies",
-      "name": "Movies"
+      "name": "Movies",
+      "behaviorHints": {
+        "orderHint": 4
+      }
     },
     {
       "type": "Marvel",
       "id": "series",
-      "name": "Series"
+      "name": "Series",
+      "behaviorHints": {
+        "orderHint": 5
+      }
     },
     {
       "type": "Marvel",
       "id": "animations",
-      "name": "Animations"
+      "name": "Animations",
+      "behaviorHints": {
+        "orderHint": 6
+      }
     }
   ],
   "resources": ["catalog"],
