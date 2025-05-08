@@ -9,28 +9,21 @@
     {
       "type": "Marvel",
       "id": "marvel-mcu",
-      "name": "Chronologically Order",
-      "behaviorHints": {
-        "orderHint": 1
-      }
-    },
-    {
-      "type": "Marvel",
-      "id": "release-order",
-      "name": "Release Order",
+      "name": "MCU Chronologically Order",
       "extra": [
         {
           "name": "genre",
-          "options": ["new"],
+          "options": ["new", "old"],
           "isRequired": false,
           "default": null,
           "optionLabels": {
-            "new": "New to Old"
+            "new": "New to Old",
+            "old": "Old to New"
           }
         }
       ],
       "behaviorHints": {
-        "orderHint": 2
+        "orderHint": 1
       }
     },
     {
@@ -38,7 +31,7 @@
       "id": "xmen",
       "name": "X-Men",
       "behaviorHints": {
-        "orderHint": 3
+        "orderHint": 2
       }
     },
     {
@@ -57,7 +50,7 @@
         }
       ],
       "behaviorHints": {
-        "orderHint": 4
+        "orderHint": 3
       }
     },
     {
@@ -76,7 +69,7 @@
         }
       ],
       "behaviorHints": {
-        "orderHint": 5
+        "orderHint": 4
       }
     },
     {
@@ -96,7 +89,7 @@
         }
       ],
       "behaviorHints": {
-        "orderHint": 6
+        "orderHint": 5
       }
     }
   ],
