@@ -21,12 +21,11 @@
       "extra": [
         {
           "name": "genre",
-          "options": ["new", "old"],
+          "options": ["new"],
           "isRequired": false,
-          "default": "old",
+          "default": null, // Remove default para usar a ordem original no Top
           "optionLabels": {
-            "new": "New to Old",
-            "old": "Old to New"
+            "new": "New to Old"
           }
         }
       ],
@@ -61,12 +60,11 @@
       "extra": [
         {
           "name": "genre",
-          "options": ["new", "old"],
+          "options": ["new"],
           "isRequired": false,
-          "default": "old",
+          "default": null, 
           "optionLabels": {
-            "new": "New to Old",
-            "old": "Old to New"
+            "new": "New to Old"
           }
         }
       ],
