@@ -20,13 +20,13 @@
       "name": "Release Order",
       "extra": [
         {
-          "name": "order", 
+          "name": "genre",
           "options": ["new", "old"],
           "isRequired": false,
           "default": "old",
           "optionLabels": {
-            "new": "New (Recent First)",
-            "old": "Old (Oldest First)"
+            "new": "New to Old",
+            "old": "Old to New"
           }
         }
       ],
@@ -38,6 +38,18 @@
       "type": "Marvel",
       "id": "xmen",
       "name": "X-Men",
+      "extra": [
+        {
+          "name": "genre",
+          "options": ["new", "old"],
+          "isRequired": false,
+          "default": "old",
+          "optionLabels": {
+            "new": "New to Old",
+            "old": "Old to New"
+          }
+        }
+      ],
       "behaviorHints": {
         "orderHint": 3
       }
@@ -46,6 +58,18 @@
       "type": "Marvel",
       "id": "movies",
       "name": "Movies",
+      "extra": [
+        {
+          "name": "genre",
+          "options": ["new", "old"],
+          "isRequired": false,
+          "default": "old",
+          "optionLabels": {
+            "new": "New to Old",
+            "old": "Old to New"
+          }
+        }
+      ],
       "behaviorHints": {
         "orderHint": 4
       }
@@ -54,6 +78,18 @@
       "type": "Marvel",
       "id": "series",
       "name": "Series",
+      "extra": [
+        {
+          "name": "genre",
+          "options": ["new", "old"],
+          "isRequired": false,
+          "default": "old",
+          "optionLabels": {
+            "new": "New to Old",
+            "old": "Old to New"
+          }
+        }
+      ],
       "behaviorHints": {
         "orderHint": 5
       }
@@ -62,6 +98,18 @@
       "type": "Marvel",
       "id": "animations",
       "name": "Animations",
+      "extra": [
+        {
+          "name": "genre",
+          "options": ["new", "old"],
+          "isRequired": false,
+          "default": "old",
+          "optionLabels": {
+            "new": "New to Old",
+            "old": "Old to New"
+          }
+        }
+      ],
       "behaviorHints": {
         "orderHint": 6
       }
@@ -76,6 +124,6 @@
   "contactEmail": "jpnapsp@gmail.com",
   "stremioAddonsConfig": {
     "issuer": "https://stremio-addons.net",
-    "signature": "eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0..zTaTTCcviqQPiIvU4QDfCQ.wSlk8AoM4p2nvlvoQJEoLRRx5_Msnu37O9bAsgwhJTZYu4uXd7Cve9GaVXdnwZ4nAeNSsRSgp51mofhf0EVQYwx7jGxh4FEvs8MMuWeHQ9alNsqVuy3-Mc459B9myIT-.R_1iaQbNExj4loQJlyWYtA"
+    "signature": "eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhSMjU2In0..zTaTTCcviqQPiIvU4QDfCQ.wSlk8AoM4p2nvlvoQJEoLRRx5_Msnu37O9bAsgwhJTZYu4uXd7Cve9GaVXdnwZ4nAeNSsRSgp51mofhf0EVQYwx7jGxh4FEvs8MMuWeHQ9alNsqVuy3-Mc459B9myIT-.R_1iaQbNExj4loQJlyWYtA"
   }
 }
