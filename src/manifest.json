@@ -14,21 +14,10 @@
     {
       "type": "Marvel",
       "id": "release-order",
-      "name": "Release Order (Marvel)",
-      "subcatalogs": [
-        {
-          "id": "new",
-          "name": "New (Recent First)"
-        },
-        {
-          "id": "old",
-          "name": "Old (Oldest First)"
-        }
-      ],
-      "extraSupported": ["sort"],
+      "name": "Release Order",
       "extra": [
         {
-          "name": "sort",
+          "name": "genre",
           "options": ["new", "old"],
           "isRequired": false,
           "default": "new",
@@ -39,8 +28,7 @@
         }
       ],
       "behaviorHints": {
-        "orderHint": 2,
-        "defaultSubcatalog": "new"
+        "orderHint": 2
       }
     },
     {
