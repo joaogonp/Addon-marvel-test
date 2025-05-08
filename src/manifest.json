@@ -37,18 +37,6 @@
       "type": "Marvel",
       "id": "xmen",
       "name": "X-Men",
-      "extra": [
-        {
-          "name": "genre",
-          "options": ["new", "old"],
-          "isRequired": false,
-          "default": "old",
-          "optionLabels": {
-            "new": "New to Old",
-            "old": "Old to New"
-          }
-        }
-      ],
       "behaviorHints": {
         "orderHint": 3
       }
@@ -62,7 +50,7 @@
           "name": "genre",
           "options": ["new"],
           "isRequired": false,
-          "default": null, 
+          "default": null,
           "optionLabels": {
             "new": "New to Old"
           }
@@ -79,12 +67,11 @@
       "extra": [
         {
           "name": "genre",
-          "options": ["new", "old"],
+          "options": ["new"],
           "isRequired": false,
-          "default": "old",
+          "default": null,
           "optionLabels": {
-            "new": "New to Old",
-            "old": "Old to New"
+            "new": "New to Old"
           }
         }
       ],
