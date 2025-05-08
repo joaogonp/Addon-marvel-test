@@ -14,6 +14,11 @@ const compression = require('compression');
 const app = express();
 app.use(compression());
 
+// Health check para o Render
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
+
 // Middleware para definir cache de 3 semanas
 app.use((req, res, next) => {
   res.setHeader('Cache-Control', 'public, max-age=2629743'); // 3 semanas
@@ -24,7 +29,7 @@ app.use((req, res, next) => {
 console.log('Starting Marvel Addon v1.0.1...');
 const builder = new addonBuilder(require('./manifest.json'));
 
-// Variável para armazenar o cache separado por ID e subcatalog
+// Variável para armazenar o cache separado por ID e genre
 let cachedCatalog = {};
 
 // Função para buscar dados adicionais (OMDb e TMDb)
@@ -89,7 +94,7 @@ function sortByReleaseDate(data, order = 'desc') {
 builder.defineCatalogHandler(async ({ type, id, extra }) => {
   console.log(`Catalog requested - Type: ${type}, ID: ${id}, Extra: ${JSON.stringify(extra)}`);
 
-  const cacheKey = id + (extra?.subcatalog ? `_${extra.subcatalog}` : (extra?.sort ? `_${extra.sort}` : ''));
+  const cacheKey = id + (extra?.genre ? `_${extra.genre}` : '');
   if (cachedCatalog[cacheKey]) {
     console.log(`✅ Retornando catálogo do cache para ID: ${cacheKey}`);
     return cachedCatalog[cacheKey];
@@ -100,12 +105,12 @@ builder.defineCatalogHandler(async ({ type, id, extra }) => {
     dataSource = chronologicalData;
   } else if (type === 'Marvel' && id === 'release-order') {
     dataSource = releaseData;
-    if (extra?.subcatalog === 'old') {
+    if (extra?.genre === 'old') {
       dataSource = sortByReleaseDate([...dataSource], 'asc');
-      console.log('Applying sort: asc (old)');
-    } else if (extra?.subcatalog === 'new' || !extra?.subcatalog) {
+      console.log('Applying sort: asc (old) for Release Order');
+    } else if (extra?.genre === 'new' || !extra?.genre) {
       dataSource = sortByReleaseDate([...dataSource], 'desc');
-      console.log('Applying sort: desc (new or default)');
+      console.log('Applying sort: desc (new or default) for Release Order');
     }
   } else if (type === 'Marvel' && id === 'xmen') {
     dataSource = xmenData;
@@ -121,7 +126,7 @@ builder.defineCatalogHandler(async ({ type, id, extra }) => {
 
   const metas = await Promise.all(dataSource.map(fetchAdditionalData));
   const validMetas = metas.filter(item => item !== null);
-  console.log(`✅ Catálogo gerado com ${validMetas.length} itens for ID: ${id}, Subcatalog: ${extra?.subcatalog || 'default'}`);
+  console.log(`✅ Catálogo gerado com ${validMetas.length} itens for ID: ${id}, Genre: ${extra?.genre || 'default'}`);
 
   cachedCatalog[cacheKey] = { metas: validMetas };
   return cachedCatalog[cacheKey];
@@ -131,8 +136,8 @@ builder.defineCatalogHandler(async ({ type, id, extra }) => {
 console.log('Initializing addon interface...');
 const addonInterface = builder.getInterface();
 
-console.log('Starting server...');
+console.log(`Starting server on port ${port}...`);
 serveHTTP(addonInterface, {
   port,
-  beforeMiddleware: app // aplica compression e cache
+  beforeMiddleware: app
 });
