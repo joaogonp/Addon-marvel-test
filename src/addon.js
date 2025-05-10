@@ -59,6 +59,9 @@ app.get('/catalog/:ids/configure', (req, res) => {
 // Cache para catálogos
 let cachedCatalog = {};
 
+// Estado para rastrear chaves RPDB inválidas
+const invalidRpdbKeys = new Set();
+
 // Função auxiliar para extrair RPDB_API_KEY de catalogsParam
 function extractRpdbKey(catalogsParam) {
     if (!catalogsParam) return null;
@@ -79,9 +82,36 @@ async function getTmdbDetails(id, type) {
     }
 }
 
+// Função para validar RPDB_API_KEY
+async function validateRpdbKey(rpdbKey) {
+    if (!rpdbKey || invalidRpdbKeys.has(rpdbKey)) {
+        return false;
+    }
+
+    const testUrl = `https://api.ratingposterdb.com/ratings/movie/tt0848228?api_key=${rpdbKey}`;
+    try {
+        const res = await axios.get(testUrl);
+        if (res.status === 200) {
+            return true;
+        }
+    } catch (err) {
+        if (err.response?.status === 403) {
+            invalidRpdbKeys.add(rpdbKey);
+            console.warn(`RPDB API Key ${rpdbKey.substring(0, 4)}... is invalid or unauthorized.`);
+        }
+        return false;
+    }
+    return false;
+}
+
 // Função para buscar ratings do RPDB (opcional)
 async function getRpdbRatings(imdbId, tmdbId, type, rpdbKey) {
-    if (!rpdbKey) {
+    if (!rpdbKey || invalidRpdbKeys.has(rpdbKey)) {
+        return {};
+    }
+
+    const isValidKey = await validateRpdbKey(rpdbKey);
+    if (!isValidKey) {
         return {};
     }
 
@@ -97,7 +127,9 @@ async function getRpdbRatings(imdbId, tmdbId, type, rpdbKey) {
         console.log(`RPDB ratings fetched for ${id}:`, res.data);
         return res.data || {};
     } catch (err) {
-        console.error(`RPDB error for ${id}: ${err.message}`);
+        if (err.response?.status !== 403) {
+            console.error(`RPDB error for ${id}: ${err.message}`);
+        }
         return {};
     }
 }
@@ -153,11 +185,19 @@ async function fetchAdditionalData(item, rpdbKey) {
                 return {};
             });
         } else {
-            const tmdbSearchUrl = `https://api.themoviedb.org/3/search/${item.type}?api_key=${tmdbKey}&query=${encodeURIComponent(item.title)}&year=${item.releaseYear}`;
-            tmdbDetailsPromise = axios.get(tmdbSearchUrl).then(res =>
-                res.data?.results?.[0] ? getTmdbDetails(res.data.results[0].id, item.type) : {}
-            ).catch((err) => {
-                console.error(`TMDB Search error for ${item.title}: ${err.message}`);
+            // Tentar busca sem ano primeiro, depois com ano
+            let tmdbSearchUrl = `https://api.themoviedb.org/3/search/${item.type}?api_key=${tmdbKey}&query=${encodeURIComponent(item.title)}`;
+            tmdbDetailsPromise = axios.get(tmdbSearchUrl).then(res => {
+                if (res.data?.results?.[0]) {
+                    return getTmdbDetails(res.data.results[0].id, item.type);
+                }
+                // Fallback com ano
+                tmdbSearchUrl += `&year=${item.releaseYear}`;
+                return axios.get(tmdbSearchUrl).then(res =>
+                    res.data?.results?.[0] ? getTmdbDetails(res.data.results[0].id, item.type) : {}
+                );
+            }).catch((err) => {
+                console.warn(`TMDB Search error for ${item.title}: ${err.message}`);
                 return {};
             });
         }
@@ -233,7 +273,17 @@ async function fetchAdditionalData(item, rpdbKey) {
         return meta;
     } catch (err) {
         console.error(`Error processing ${item.title} (${lookupId}): ${err.message}`);
-        return null;
+        return {
+            id: lookupId,
+            type: item.type,
+            name: item.type === 'series' ? item.title.replace(/ Season \d+/, '') : item.title,
+            poster: item.poster || 'https://m.media-amazon.com/images/M/MV5BMTc5MDE2ODcwNV5BMl5BanBnXkFtZTgwMzI2NzQ2NzM@._V1_SX300.jpg',
+            description: item.overview || 'No description available.',
+            releaseInfo: item.releaseYear || 'N/A',
+            imdbRating: 'N/A',
+            rottenTomatoesRating: 'N/A',
+            genres: item.genres ? item.genres.map(g => g.name) : ['Action', 'Adventure']
+        };
     }
 }
 
@@ -405,7 +455,7 @@ app.get('/catalog/:catalogsParam/manifest.json', (req, res) => {
         contactEmail: "jpnapsp@gmail.com",
         stremioAddonsConfig: {
             issuer: "https://stremio-addons.net",
-            signature: "eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0..zTaTTCcviqQPiIvU4QDfCQ.wSlk8AoM4p2nvlvoQJEoLRRx5_Msnu37O9bAsgwhJTZYu4uXd7Cve9GaVXdnwZ4nAeNSsRSgp51mofhf0EVQYwx7jGxh4FEvs8MMuWeHQ9alNsqVuy3-Mc459B9myIT-.R_1iaQbNExj4loQJlyWYtA"
+            signature: "eyJhbGciOiJkaXIiLCJlnmMiOiJBMTI4Q0JDLUhTMjU2In0..zTaTTCcviqQPiIvU4QDfCQ.wSlk8AoM4p2nvlvoQJEoLRRx5_Msnu37O9bAsgwhJTZYu4uXd7Cve9GaVXdnwZ4nAeNSsRSgp51mofhf0EVQYwx7jGxh4FEvs8MMuWeHQ9alNsqVuy3-Mc459B9myIT-.R_1iaQbNExj4loQJlyWYtA"
         }
     };
     
