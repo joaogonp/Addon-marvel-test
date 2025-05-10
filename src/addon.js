@@ -63,10 +63,15 @@ app.get('/api/validate-rpdb', async (req, res) => {
         return res.status(400).json({ valid: false, error: 'No RPDB API Key provided.' });
     }
 
-    const testUrl = `https://api.ratingposterdb.com/ratings/movie/tt1270798?api_key=${encodeURIComponent(rpdbKey)}`;
+    const testUrl = `https://api.ratingposterdb.com/ratings/movie/tt0848228?api_key=${encodeURIComponent(rpdbKey)}`;
     try {
-        const response = await axios.get(testUrl, { validateStatus: status => status < 500 });
-        console.log(`RPDB validation response for key ${rpdbKey.substring(0, 4)}...:`, response.data);
+        const response = await axios.get(testUrl, {
+            validateStatus: status => status < 500,
+            headers: {
+                'User-Agent': 'Marvel-Addon/1.1.0 (https://seu-app.onrender.com)'
+            }
+        });
+        console.log(`RPDB validation response for key ${rpdbKey.substring(0, 4)}...:`, response.status, response.data);
         if (response.status === 200) {
             console.log(`RPDB key validation successful for key: ${rpdbKey.substring(0, 4)}...`);
             return res.json({ valid: true });
@@ -78,9 +83,9 @@ app.get('/api/validate-rpdb', async (req, res) => {
         console.warn(`RPDB key validation error for key: ${rpdbKey.substring(0, 4)}...`, error.message);
         let errorMessage = 'Invalid RPDB API Key.';
         if (error.response) {
-            console.log(`RPDB error response:`, error.response.data);
+            console.log(`RPDB error response:`, error.response.status, error.response.data);
             if (error.response.status === 403) {
-                errorMessage = 'RPDB API Key is unauthorized (403). Check if the key is valid.';
+                errorMessage = 'RPDB API Key is unauthorized (403). Check if the key is valid or generate a new one.';
             } else if (error.response.status === 429) {
                 errorMessage = 'RPDB API Key rate limit exceeded (429). Try again later.';
             } else {
@@ -131,21 +136,27 @@ async function validateRpdbKey(rpdbKey) {
         return false;
     }
 
-    const testUrl = `https://api.ratingposterdb.com/ratings/movie/tt1270798?api_key=${rpdbKey}`;
+    const testUrl = `https://api.ratingposterdb.com/ratings/movie/tt0848228?api_key=${rpdbKey}`;
     try {
-        const res = await axios.get(testUrl, { validateStatus: status => status < 500 });
-        console.log(`RPDB validation response for key ${rpdbKey.substring(0, 4)}...:`, res.data);
+        const res = await axios.get(testUrl, {
+            validateStatus: status => status < 500,
+            headers: {
+                'User-Agent': 'Marvel-Addon/1.1.0 (https://seu-app.onrender.com)'
+            }
+        });
+        console.log(`RPDB validation response for key ${rpdbKey.substring(0, 4)}...:`, res.status, res.data);
         if (res.status === 200) {
             return true;
         }
-    } catch (err) {
-        if (err.response?.status === 403) {
+        if (res.status === 403) {
             invalidRpdbKeys.add(rpdbKey);
             console.warn(`RPDB API Key ${rpdbKey.substring(0, 4)}... is invalid or unauthorized.`);
         }
         return false;
+    } catch (err) {
+        console.warn(`RPDB validation error for key ${rpdbKey.substring(0, 4)}...`, err.message);
+        return false;
     }
-    return false;
 }
 
 // Função para buscar ratings e posters do RPDB
@@ -169,7 +180,11 @@ async function getRpdbRatings(imdbId, tmdbId, type, rpdbKey) {
     const ratingsUrl = `https://api.ratingposterdb.com/ratings/${type}/${id}?api_key=${rpdbKey}`;
     let ratingsData = {};
     try {
-        const ratingsRes = await axios.get(ratingsUrl);
+        const ratingsRes = await axios.get(ratingsUrl, {
+            headers: {
+                'User-Agent': 'Marvel-Addon/1.1.0 (https://seu-app.onrender.com)'
+            }
+        });
         ratingsData = ratingsRes.data || {};
         console.log(`RPDB ratings fetched for ${id}:`, ratingsData);
     } catch (err) {
@@ -182,7 +197,11 @@ async function getRpdbRatings(imdbId, tmdbId, type, rpdbKey) {
     let posterData = {};
     const posterUrl = `https://api.ratingposterdb.com/posters/${type}/${id}?api_key=${rpdbKey}`;
     try {
-        const posterRes = await axios.get(posterUrl);
+        const posterRes = await axios.get(posterUrl, {
+            headers: {
+                'User-Agent': 'Marvel-Addon/1.1.0 (https://seu-app.onrender.com)'
+            }
+        });
         posterData = posterRes.data || {};
         console.log(`RPDB poster fetched for ${id}:`, posterData.poster || 'No poster');
     } catch (err) {
