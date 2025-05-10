@@ -56,45 +56,15 @@ app.get('/catalog/:ids/configure', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'configure.html'));
 });
 
-// Endpoint para validar RPDB_API_KEY
-app.get('/api/validate-rpdb', async (req, res) => {
-    const rpdbKey = req.query.key;
-    if (!rpdbKey) {
-        return res.status(400).json({ valid: false, error: 'No RPDB API Key provided.' });
-    }
+// Cache para catálogos
+let cachedCatalog = {};
 
-    const testUrl = `https://api.ratingposterdb.com/ratings/movie/tt0848228?api_key=${encodeURIComponent(rpdbKey)}`;
-    try {
-        const response = await axios.get(testUrl, {
-            validateStatus: status => status < 500,
-            headers: {
-                'User-Agent': 'Marvel-Addon/1.1.0 (https://seu-app.onrender.com)'
-            }
-        });
-        console.log(`RPDB validation response for key ${rpdbKey.substring(0, 4)}...:`, response.status, response.data);
-        if (response.status === 200) {
-            console.log(`RPDB key validation successful for key: ${rpdbKey.substring(0, 4)}...`);
-            return res.json({ valid: true });
-        } else {
-            console.warn(`RPDB key validation failed for key: ${rpdbKey.substring(0, 4)}... (Status: ${response.status})`);
-            return res.status(400).json({ valid: false, error: `Invalid RPDB API Key (Status: ${response.status}).` });
-        }
-    } catch (error) {
-        console.warn(`RPDB key validation error for key: ${rpdbKey.substring(0, 4)}...`, error.message);
-        let errorMessage = 'Invalid RPDB API Key.';
-        if (error.response) {
-            console.log(`RPDB error response:`, error.response.status, error.response.data);
-            if (error.response.status === 403) {
-                errorMessage = 'RPDB API Key is unauthorized (403). Check if the key is valid or generate a new one.';
-            } else if (error.response.status === 429) {
-                errorMessage = 'RPDB API Key rate limit exceeded (429). Try again later.';
-            } else {
-                errorMessage = `RPDB API error (Status: ${error.response.status}).`;
-            }
-        }
-        return res.status(400).json({ valid: false, error: errorMessage });
-    }
-});
+// Estado para rastrear chaves RPDB inválidas
+const invalidRpdbKeys = new Set();
+
+// Limpar cache de chaves inválidas ao iniciar
+invalidRpdbKeys.clear();
+console.log('Invalid RPDB keys cache cleared on startup.');
 
 // Endpoint para limpar cache
 app.get('/api/clear-cache', (req, res) => {
@@ -103,12 +73,6 @@ app.get('/api/clear-cache', (req, res) => {
     console.log('Cache and invalid RPDB keys cleared.');
     res.json({ message: 'Cache cleared successfully.' });
 });
-
-// Cache para catálogos
-let cachedCatalog = {};
-
-// Estado para rastrear chaves RPDB inválidas
-const invalidRpdbKeys = new Set();
 
 // Função auxiliar para extrair RPDB_API_KEY de catalogsParam
 function extractRpdbKey(catalogsParam) {
@@ -133,40 +97,73 @@ async function getTmdbDetails(id, type) {
 // Função para validar RPDB_API_KEY
 async function validateRpdbKey(rpdbKey) {
     if (!rpdbKey || invalidRpdbKeys.has(rpdbKey)) {
+        console.log(`RPDB key ${rpdbKey?.substring(0, 4)}... skipped (empty or cached as invalid)`);
         return false;
     }
 
-    const testUrl = `https://api.ratingposterdb.com/ratings/movie/tt0848228?api_key=${rpdbKey}`;
+    // Sanitizar chave
+    const sanitizedKey = rpdbKey.trim();
+    const testUrl = `https://api.ratingposterdb.com/ratings/movie/tt0848228?api_key=${encodeURIComponent(sanitizedKey)}`;
+    console.log(`Attempting RPDB validation with URL: ${testUrl.substring(0, 100)}...`);
+
     try {
         const res = await axios.get(testUrl, {
             validateStatus: status => status < 500,
             headers: {
-                'User-Agent': 'Marvel-Addon/1.1.0 (https://seu-app.onrender.com)'
+                'User-Agent': 'Mozilla/5.0 (compatible; Marvel-Addon/1.2.0; https://seu-app.onrender.com)'
             }
         });
-        console.log(`RPDB validation response for key ${rpdbKey.substring(0, 4)}...:`, res.status, res.data);
+        console.log(`RPDB validation response for key ${sanitizedKey.substring(0, 4)}...: Status ${res.status}, Data:`, res.data);
         if (res.status === 200) {
+            console.log(`RPDB key validation successful for key: ${sanitizedKey.substring(0, 4)}...`);
             return true;
         }
+        console.warn(`RPDB key validation failed for key: ${sanitizedKey.substring(0, 4)}... (Status: ${res.status}, Data: ${JSON.stringify(res.data)})`);
         if (res.status === 403) {
-            invalidRpdbKeys.add(rpdbKey);
-            console.warn(`RPDB API Key ${rpdbKey.substring(0, 4)}... is invalid or unauthorized.`);
+            invalidRpdbKeys.add(sanitizedKey);
+            console.warn(`RPDB API Key ${sanitizedKey.substring(0, 4)}... marked as invalid.`);
         }
         return false;
     } catch (err) {
-        console.warn(`RPDB validation error for key ${rpdbKey.substring(0, 4)}...`, err.message);
+        console.error(`RPDB validation error for key ${sanitizedKey.substring(0, 4)}...`, err.message);
+        if (err.response) {
+            console.log(`RPDB error response: Status ${err.response.status}, Data:`, err.response.data);
+            if (err.response.status === 403) {
+                invalidRpdbKeys.add(sanitizedKey);
+                console.warn(`RPDB API Key ${sanitizedKey.substring(0, 4)}... marked as invalid due to 403.`);
+            }
+        }
         return false;
     }
 }
 
+// Endpoint para validar RPDB_API_KEY
+app.get('/api/validate-rpdb', async (req, res) => {
+    const rpdbKey = req.query.key;
+    if (!rpdbKey) {
+        return res.status(400).json({ valid: false, error: 'No RPDB API Key provided.' });
+    }
+
+    const isValid = await validateRpdbKey(rpdbKey);
+    if (isValid) {
+        return res.json({ valid: true });
+    }
+    return res.status(400).json({
+        valid: false,
+        error: 'Invalid RPDB API Key. Copy the key exactly from ratingposterdb.com without spaces, check its status in your RPDB dashboard, or contact RPDB support at https://ratingposterdb.com/support.'
+    });
+});
+
 // Função para buscar ratings e posters do RPDB
 async function getRpdbRatings(imdbId, tmdbId, type, rpdbKey) {
     if (!rpdbKey || invalidRpdbKeys.has(rpdbKey)) {
+        console.log(`Skipping RPDB ratings for ${imdbId || tmdbId} (no valid key)`);
         return {};
     }
 
     const isValidKey = await validateRpdbKey(rpdbKey);
     if (!isValidKey) {
+        console.log(`RPDB key ${rpdbKey.substring(0, 4)}... invalid, skipping ratings/posters`);
         return {};
     }
 
@@ -177,29 +174,29 @@ async function getRpdbRatings(imdbId, tmdbId, type, rpdbKey) {
     }
 
     // Buscar ratings
-    const ratingsUrl = `https://api.ratingposterdb.com/ratings/${type}/${id}?api_key=${rpdbKey}`;
+    const ratingsUrl = `https://api.ratingposterdb.com/ratings/${type}/${id}?api_key=${encodeURIComponent(rpdbKey)}`;
     let ratingsData = {};
     try {
         const ratingsRes = await axios.get(ratingsUrl, {
             headers: {
-                'User-Agent': 'Marvel-Addon/1.1.0 (https://seu-app.onrender.com)'
+                'User-Agent': 'Mozilla/5.0 (compatible; Marvel-Addon/1.2.0; https://seu-app.onrender.com)'
             }
         });
         ratingsData = ratingsRes.data || {};
         console.log(`RPDB ratings fetched for ${id}:`, ratingsData);
     } catch (err) {
         if (err.response?.status !== 403) {
-            console.error(`RPDB ratings error for ${id}: ${err.message}`);
+            console.error(`RPDB ratings error for ${id}: ${err.message}, Status: ${err.response?.status}, Data: ${JSON.stringify(err.response?.data)}`);
         }
     }
 
     // Buscar poster (apenas para Tier 1)
     let posterData = {};
-    const posterUrl = `https://api.ratingposterdb.com/posters/${type}/${id}?api_key=${rpdbKey}`;
+    const posterUrl = `https://api.ratingposterdb.com/posters/${type}/${id}?api_key=${encodeURIComponent(rpdbKey)}`;
     try {
         const posterRes = await axios.get(posterUrl, {
             headers: {
-                'User-Agent': 'Marvel-Addon/1.1.0 (https://seu-app.onrender.com)'
+                'User-Agent': 'Mozilla/5.0 (compatible; Marvel-Addon/1.2.0; https://seu-app.onrender.com)'
             }
         });
         posterData = posterRes.data || {};
@@ -208,7 +205,7 @@ async function getRpdbRatings(imdbId, tmdbId, type, rpdbKey) {
         if (err.response?.status === 403) {
             console.warn(`RPDB poster access denied for ${id} (likely not Tier 1).`);
         } else if (err.response?.status !== 404) {
-            console.error(`RPDB poster error for ${id}: ${err.message}`);
+            console.error(`RPDB poster error for ${id}: ${err.message}, Status: ${err.response?.status}, Data: ${JSON.stringify(err.response?.data)}`);
         }
     }
 
@@ -513,7 +510,7 @@ app.get('/manifest.json', (req, res) => {
         id: "com.joaogonp.marveladdon",
         name: "Marvel Teste",
         description: "Watch the entire Marvel catalog! MCU and X-Men (chronologically organized), Movies, Series, and Animations!",
-        version: "1.1.0",
+        version: "1.2.0",
         logo: "https://raw.githubusercontent.com/joaogonp/addon-marvel/main/assets/icon.png",
         background: "https://raw.githubusercontent.com/joaogonp/addon-marvel/main/assets/background.jpg",
         catalogs: getAllCatalogs(),
@@ -550,7 +547,7 @@ app.get('/catalog/:catalogsParam/manifest.json', (req, res) => {
         id: "com.joaogonp.marveladdon.custom",
         name: "Marvel Teste Custom",
         description: "Your personalized Marvel catalog! MCU and X-Men (chronologically organized), Movies, Series, and Animations!",
-        version: "1.1.0",
+        version: "1.2.0",
         logo: "https://raw.githubusercontent.com/joaogonp/addon-marvel/main/assets/icon.png",
         background: "https://raw.githubusercontent.com/joaogonp/addon-marvel/main/assets/background.jpg",
         catalogs: filteredCatalogs,
