@@ -3,6 +3,7 @@ const path = require('path');
 const cors = require('cors');
 const compression = require('compression');
 const axios = require('axios');
+const cache = require('memory-cache'); // Novo
 const chronologicalData = require('../Data/chronologicalData');
 const moviesData = require('../Data/moviesData');
 const seriesData = require('../Data/seriesData');
@@ -35,7 +36,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Cache de 3 semanas
+// Cache de 3 semanas para respostas HTTP
 app.use((req, res, next) => {
     res.setHeader('Cache-Control', 'public, max-age=1814400');
     next();
@@ -59,18 +60,11 @@ app.get('/catalog/:ids/configure', (req, res) => {
 // Cache para catálogos
 let cachedCatalog = {};
 
-// Estado para rastrear chaves RPDB inválidas
-const invalidRpdbKeys = new Set();
-
-// Limpar cache de chaves inválidas ao iniciar
-invalidRpdbKeys.clear();
-console.log('Invalid RPDB keys cache cleared on startup.');
-
 // Endpoint para limpar cache
 app.get('/api/clear-cache', (req, res) => {
     cachedCatalog = {};
-    invalidRpdbKeys.clear();
-    console.log('Cache and invalid RPDB keys cleared.');
+    cache.clear();
+    console.log('Cache and memory-cache cleared.');
     res.json({ message: 'Cache cleared successfully.' });
 });
 
@@ -96,43 +90,41 @@ async function getTmdbDetails(id, type) {
 
 // Função para validar RPDB_API_KEY
 async function validateRpdbKey(rpdbKey) {
-    if (!rpdbKey || invalidRpdbKeys.has(rpdbKey)) {
-        console.log(`RPDB key ${rpdbKey?.substring(0, 4)}... skipped (empty or cached as invalid)`);
+    if (!rpdbKey) {
+        console.log('No RPDB key provided');
         return false;
     }
 
-    // Sanitizar chave
     const sanitizedKey = rpdbKey.trim();
-    const testUrl = `https://api.ratingposterdb.com/ratings/movie/tt0848228?api_key=${encodeURIComponent(sanitizedKey)}`;
+    const cacheKey = `rpdb_validate_${sanitizedKey}`;
+    const cachedResult = cache.get(cacheKey);
+    if (cachedResult !== null) {
+        console.log(`Returning cached RPDB validation for key ${sanitizedKey.substring(0, 4)}...: ${cachedResult}`);
+        return cachedResult;
+    }
+
+    const testUrl = `https://api.ratingposterdb.com/ratings/movie/tt0133093?api_key=${encodeURIComponent(sanitizedKey)}`;
     console.log(`Attempting RPDB validation with URL: ${testUrl.substring(0, 100)}...`);
 
     try {
         const res = await axios.get(testUrl, {
-            validateStatus: status => status < 500,
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (compatible; Marvel-Addon/1.2.0; https://seu-app.onrender.com)'
-            }
+            validateStatus: status => status < 500
         });
         console.log(`RPDB validation response for key ${sanitizedKey.substring(0, 4)}...: Status ${res.status}, Data:`, res.data);
         if (res.status === 200) {
+            cache.put(cacheKey, true, 24 * 60 * 60 * 1000); // Cache por 1 dia
             console.log(`RPDB key validation successful for key: ${sanitizedKey.substring(0, 4)}...`);
             return true;
         }
         console.warn(`RPDB key validation failed for key: ${sanitizedKey.substring(0, 4)}... (Status: ${res.status}, Data: ${JSON.stringify(res.data)})`);
-        if (res.status === 403) {
-            invalidRpdbKeys.add(sanitizedKey);
-            console.warn(`RPDB API Key ${sanitizedKey.substring(0, 4)}... marked as invalid.`);
-        }
+        cache.put(cacheKey, false, 24 * 60 * 60 * 1000);
         return false;
     } catch (err) {
         console.error(`RPDB validation error for key ${sanitizedKey.substring(0, 4)}...`, err.message);
         if (err.response) {
             console.log(`RPDB error response: Status ${err.response.status}, Data:`, err.response.data);
-            if (err.response.status === 403) {
-                invalidRpdbKeys.add(sanitizedKey);
-                console.warn(`RPDB API Key ${sanitizedKey.substring(0, 4)}... marked as invalid due to 403.`);
-            }
         }
+        cache.put(cacheKey, false, 24 * 60 * 60 * 1000);
         return false;
     }
 }
@@ -156,8 +148,8 @@ app.get('/api/validate-rpdb', async (req, res) => {
 
 // Função para buscar ratings e posters do RPDB
 async function getRpdbRatings(imdbId, tmdbId, type, rpdbKey) {
-    if (!rpdbKey || invalidRpdbKeys.has(rpdbKey)) {
-        console.log(`Skipping RPDB ratings for ${imdbId || tmdbId} (no valid key)`);
+    if (!rpdbKey) {
+        console.log(`Skipping RPDB ratings for ${imdbId || tmdbId} (no key)`);
         return {};
     }
 
@@ -173,32 +165,29 @@ async function getRpdbRatings(imdbId, tmdbId, type, rpdbKey) {
         return {};
     }
 
+    const cacheKey = `rpdb_${type}_${id}_${rpdbKey}`;
+    const cached = cache.get(cacheKey);
+    if (cached) {
+        console.log(`Returning cached RPDB data for ${id}`);
+        return cached;
+    }
+
     // Buscar ratings
     const ratingsUrl = `https://api.ratingposterdb.com/ratings/${type}/${id}?api_key=${encodeURIComponent(rpdbKey)}`;
     let ratingsData = {};
     try {
-        const ratingsRes = await axios.get(ratingsUrl, {
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (compatible; Marvel-Addon/1.2.0; https://seu-app.onrender.com)'
-            }
-        });
+        const ratingsRes = await axios.get(ratingsUrl);
         ratingsData = ratingsRes.data || {};
         console.log(`RPDB ratings fetched for ${id}:`, ratingsData);
     } catch (err) {
-        if (err.response?.status !== 403) {
-            console.error(`RPDB ratings error for ${id}: ${err.message}, Status: ${err.response?.status}, Data: ${JSON.stringify(err.response?.data)}`);
-        }
+        console.error(`RPDB ratings error for ${id}: ${err.message}, Status: ${err.response?.status}, Data: ${JSON.stringify(err.response?.data)}`);
     }
 
     // Buscar poster (apenas para Tier 1)
     let posterData = {};
     const posterUrl = `https://api.ratingposterdb.com/posters/${type}/${id}?api_key=${encodeURIComponent(rpdbKey)}`;
     try {
-        const posterRes = await axios.get(posterUrl, {
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (compatible; Marvel-Addon/1.2.0; https://seu-app.onrender.com)'
-            }
-        });
+        const posterRes = await axios.get(posterUrl);
         posterData = posterRes.data || {};
         console.log(`RPDB poster fetched for ${id}:`, posterData.poster || 'No poster');
     } catch (err) {
@@ -209,10 +198,12 @@ async function getRpdbRatings(imdbId, tmdbId, type, rpdbKey) {
         }
     }
 
-    return {
+    const result = {
         ...ratingsData,
         poster: posterData.poster || null
     };
+    cache.put(cacheKey, result, 3 * 24 * 60 * 60 * 1000); // Cache por 3 dias
+    return result;
 }
 
 // Função para buscar dados adicionais (TMDb, OMDb, RPDB)
@@ -266,13 +257,11 @@ async function fetchAdditionalData(item, rpdbKey) {
                 return {};
             });
         } else {
-            // Tentar busca sem ano primeiro, depois com ano
             let tmdbSearchUrl = `https://api.themoviedb.org/3/search/${item.type}?api_key=${tmdbKey}&query=${encodeURIComponent(item.title)}`;
             tmdbDetailsPromise = axios.get(tmdbSearchUrl).then(res => {
                 if (res.data?.results?.[0]) {
                     return getTmdbDetails(res.data.results[0].id, item.type);
                 }
-                // Fallback com ano
                 tmdbSearchUrl += `&year=${item.releaseYear}`;
                 return axios.get(tmdbSearchUrl).then(res =>
                     res.data?.results?.[0] ? getTmdbDetails(res.data.results[0].id, item.type) : {}
@@ -315,7 +304,6 @@ async function fetchAdditionalData(item, rpdbKey) {
         tmdbImagesData = tmdbImagesRes.data || {};
         rpdbData = rpdbRes || {};
 
-        // Verificar se a URL do poster é válida
         async function isValidImageUrl(url) {
             if (!url) return false;
             try {
@@ -326,7 +314,6 @@ async function fetchAdditionalData(item, rpdbKey) {
             }
         }
 
-        // Priorizar poster: RPDB (se chave válida e Tier 1) > item.poster > TMDb > OMDb > fallback
         let poster = null;
         if (rpdbKey && rpdbData.poster && (await isValidImageUrl(rpdbData.poster))) {
             poster = rpdbData.poster;
@@ -355,7 +342,6 @@ async function fetchAdditionalData(item, rpdbKey) {
 
         const description = item.overview || tmdbData.overview || omdbData.Plot || 'No description available.';
 
-        // Validar tipo do item retornado pelo TMDb
         const expectedType = item.type;
         if (tmdbData.id && tmdbData.media_type && tmdbData.media_type !== expectedType) {
             console.warn(`TMDb returned wrong media type for ${item.title} (${lookupId}): expected ${expectedType}, got ${tmdbData.media_type}`);
@@ -510,7 +496,7 @@ app.get('/manifest.json', (req, res) => {
         id: "com.joaogonp.marveladdon",
         name: "Marvel Teste",
         description: "Watch the entire Marvel catalog! MCU and X-Men (chronologically organized), Movies, Series, and Animations!",
-        version: "1.2.0",
+        version: "1.3.0",
         logo: "https://raw.githubusercontent.com/joaogonp/addon-marvel/main/assets/icon.png",
         background: "https://raw.githubusercontent.com/joaogonp/addon-marvel/main/assets/background.jpg",
         catalogs: getAllCatalogs(),
@@ -547,7 +533,7 @@ app.get('/catalog/:catalogsParam/manifest.json', (req, res) => {
         id: "com.joaogonp.marveladdon.custom",
         name: "Marvel Teste Custom",
         description: "Your personalized Marvel catalog! MCU and X-Men (chronologically organized), Movies, Series, and Animations!",
-        version: "1.2.0",
+        version: "1.3.0",
         logo: "https://raw.githubusercontent.com/joaogonp/addon-marvel/main/assets/icon.png",
         background: "https://raw.githubusercontent.com/joaogonp/addon-marvel/main/assets/background.jpg",
         catalogs: filteredCatalogs,
@@ -615,7 +601,7 @@ app.get('/api/catalogs', (req, res) => {
 // Endpoint de catálogo padrão
 app.get('/catalog/:type/:id.json', async (req, res) => {
     const { type, id } = req.params;
-    const genre = req.query.genre; // Suporte a ordenação por gênero (old/new)
+    const genre = req.query.genre;
     console.log(`Default catalog requested - Type: ${type}, ID: ${id}, Genre: ${genre || 'default'}`);
     
     const cacheKey = `default-${id}${genre ? `_${genre}` : ''}`;
@@ -659,7 +645,6 @@ app.get('/catalog/:type/:id.json', async (req, res) => {
         }
         console.log(`Loaded ${dataSource.length} items for catalog: ${dataSourceName}`);
         
-        // Aplicar ordenação se especificado
         if (genre === 'old') {
             dataSource = sortByReleaseDate([...dataSource], 'asc');
             console.log(`${dataSourceName} - Applying sort: asc (old to new)`);
@@ -667,7 +652,6 @@ app.get('/catalog/:type/:id.json', async (req, res) => {
             dataSource = sortByReleaseDate([...dataSource], 'desc');
             console.log(`${dataSourceName} - Applying sort: desc (new to old)`);
         } else if (id === 'animations' && !genre) {
-            // Para 'animations', default é 'old' conforme o manifest
             dataSource = sortByReleaseDate([...dataSource], 'asc');
             console.log(`${dataSourceName} - Applying default sort: asc (old to new)`);
         } else {
@@ -749,7 +733,6 @@ app.get('/catalog/:catalogsParam/catalog/:type/:id.json', async (req, res) => {
             dataSource = sortByReleaseDate([...dataSource], 'desc');
             console.log(`${dataSourceName} - Applying sort: desc (new to old)`);
         } else if (id === 'animations' && !genre) {
-            // Para 'animations', default é 'old' conforme o manifest
             dataSource = sortByReleaseDate([...dataSource], 'asc');
             console.log(`${dataSourceName} - Applying default sort: asc (old to new)`);
         } else {
