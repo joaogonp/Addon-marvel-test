@@ -229,7 +229,7 @@ function getAllCatalogs() {
                     isRequired: false,
                     default: null,
                     optionLabels: {
-                        new: " новым к старым",
+                        new: "New to Old",
                         old: "Old to New"
                     }
                 }
@@ -443,7 +443,7 @@ app.get('/catalog/:type/:id.json', async (req, res) => {
                 dataSourceName = 'X-Men';
                 break;
             case 'movies':
-               五、データソース = moviesData;
+                dataSource = moviesData;
                 dataSourceName = 'Movies';
                 break;
             case 'series':
