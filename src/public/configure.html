@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Marvel Universe - Craft Your Addon</title>
+    <title>Marvel Universe - Assemble Your Saga</title>
     <!-- Vue.js -->
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
     <!-- Tailwind CSS -->
@@ -17,33 +17,43 @@
                 extend: {
                     colors: {
                         marvelred: {
-                            light: '#ff6b6b',
-                            DEFAULT: '#dc2626',
-                            dark: '#b91c1c',
+                            light: '#ff3333',
+                            DEFAULT: '#e50914',
+                            dark: '#b20710',
                         },
                         marvelgold: {
-                            light: '#fef08a',
-                            DEFAULT: '#facc15',
-                            dark: '#ca8a04',
+                            light: '#fadb14',
+                            DEFAULT: '#f5c518',
+                            dark: '#ca9e10',
+                        },
+                        marvelblue: {
+                            light: '#3b82f6',
+                            DEFAULT: '#1e3a8a',
+                            dark: '#172554',
                         },
                         marveldark: {
-                            light: '#1f2937',
-                            DEFAULT: '#111827',
-                            dark: '#0f172a',
+                            light: '#1a1a1a',
+                            DEFAULT: '#050505',
+                            dark: '#000000',
                         }
                     },
                     boxShadow: {
-                        'marvel-glow': '0 0 15px rgba(220, 38, 38, 0.3)',
-                        'marvel-card': '0 4px 20px rgba(0, 0, 0, 0.2)',
+                        'cosmic': '0 0 12px rgba(229, 9, 20, 0.5), 0 0 24px rgba(229, 9, 20, 0.3)',
+                        'card-float': '0 8px 24px rgba(0, 0, 0, 0.6)',
                     },
                     keyframes: {
-                        spinGlow: {
-                            '0%, 100%': { boxShadow: '0 0 10px rgba(220, 38, 38, 0.5)' },
-                            '50%': { boxShadow: '0 0 20px rgba(220, 38, 38, 0.8)' },
+                        scaleGlow: {
+                            '0%, 100%': { transform: 'scale(1)', boxShadow: '0 0 10px rgba(229, 9, 20, 0.4)' },
+                            '50%': { transform: 'scale(1.02)', boxShadow: '0 0 20px rgba(229, 9, 20, 0.8)' },
+                        },
+                        floatIn: {
+                            '0%': { opacity: 0, transform: 'translateY(30px) scale(0.95)' },
+                            '100%': { opacity: 1, transform: 'translateY(0) scale(1)' },
                         }
                     },
                     animation: {
-                        'spin-glow': 'spinGlow 2s ease-in-out infinite',
+                        'scale-glow': 'scaleGlow 2s ease-in-out infinite',
+                        'float-in': 'floatIn 0.6s ease-out',
                     }
                 }
             }
@@ -52,15 +62,19 @@
     <style>
         [v-cloak] { display: none; }
 
-        /* Custom animations */
-        .rotate-fade-enter-active, .rotate-fade-leave-active {
-            transition: all 0.4s ease;
+        /* Float-in animation */
+        .float-in-enter-active {
+            animation: float-in 0.6s ease-out;
         }
-        .rotate-fade-enter, .rotate-fade-leave-to {
+        .float-in-leave-active {
+            transition: opacity 0.3s, transform 0.3s;
+        }
+        .float-in-enter, .float-in-leave-to {
             opacity: 0;
-            transform: rotateY(10deg);
+            transform: translateY(30px) scale(0.95);
         }
 
+        /* Fade for notifications */
         .fade-enter-active, .fade-leave-active {
             transition: opacity 0.5s;
         }
@@ -72,9 +86,10 @@
         .catalog-card {
             background-size: cover;
             background-position: center;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
             position: relative;
             overflow: hidden;
+            border-radius: 16px;
         }
         .catalog-card::before {
             content: '';
@@ -83,222 +98,248 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: linear-gradient(to bottom, rgba(17, 24, 39, 0.7), rgba(17, 24, 39, 0.9));
+            background: linear-gradient(to bottom, rgba(5, 5, 5, 0.2), rgba(5, 5, 5, 0.85));
             z-index: 0;
         }
         .catalog-card:hover {
-            transform: scale(1.05);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            transform: translateY(-8px) scale(1.03);
+            box-shadow: 0 0 24px rgba(229, 9, 20, 0.6);
         }
         .catalog-card.selected {
-            border: 3px solid #facc15;
-        }
-        .dark .catalog-card.selected {
-            border-color: #fef08a;
+            border: 3px solid #f5c518;
+            box-shadow: 0 0 20px rgba(245, 197, 24, 0.6);
         }
         .card-content {
             position: relative;
             z-index: 1;
         }
 
-        /* Button glow effect */
+        /* Button styles */
         .marvel-button {
             position: relative;
             overflow: hidden;
-            transition: all 0.3s ease;
+            transition: all 0.4s ease;
+            border: 1px solid transparent;
         }
         .marvel-button:hover {
-            box-shadow: 0 0 15px rgba(220, 38, 38, 0.5);
+            border-color: #f5c518;
+            box-shadow: 0 0 15px rgba(229, 9, 20, 0.5);
         }
 
-        /* Masonry grid */
-        .masonry-grid {
-            column-count: 1;
-            column-gap: 1.5rem;
+        /* Hero section */
+        .hero {
+            background: linear-gradient(135deg, #050505 0%, #1e3a8a 50%, #e50914 100%);
+            position: relative;
+            overflow: hidden;
         }
-        @media (min-width: 640px) {
-            .masonry-grid {
-                column-count: 2;
-            }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('https://raw.githubusercontent.com/joaogonp/addon-marvel/main/assets/background.jpg') center/cover;
+            opacity: 0.15;
+            z-index: 0;
         }
-        @media (min-width: 1024px) {
-            .masonry-grid {
-                column-count: 3;
-            }
-        }
-        .masonry-item {
-            break-inside: avoid;
-            margin-bottom: 1.5rem;
+        .hero-content {
+            position: relative;
+            z-index: 1;
         }
 
-        /* Header styles */
-        .header {
-            background: linear-gradient(45deg, #111827 0%, #dc2626 100%);
+        /* Particle effect (subtle) */
+        .particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: #f5c518;
+            border-radius: 50%;
+            opacity: 0.5;
+            animation: floatParticle 10s linear infinite;
+        }
+        @keyframes floatParticle {
+            0% { transform: translateY(0); opacity: 0.5; }
+            100% { transform: translateY(-100vh); opacity: 0; }
         }
 
         /* Notification styles */
         .notification {
             position: fixed;
-            top: 1rem;
-            right: 1rem;
+            top: 1.5rem;
+            right: 1.5rem;
             z-index: 1000;
         }
 
         /* Responsive adjustments */
         @media (max-width: 640px) {
-            .header-title {
-                font-size: 1.25rem !important;
+            .catalog-grid {
+                grid-template-columns: 1fr;
             }
-            .catalog-card {
-                min-height: 200px !important;
+            .hero-title {
+                font-size: 2rem !important;
             }
             .marvel-button {
-                padding: 0.5rem 1rem;
+                padding: 0.75rem 1.5rem;
+                font-size: 0.9rem;
+            }
+            .catalog-card {
+                min-height: 240px !important;
             }
         }
     </style>
 </head>
-<body class="bg-marveldark dark:bg-marveldark-dark text-white">
+<body class="bg-marveldark text-white">
     <div id="app" v-cloak>
-        <!-- Header -->
-        <header class="header py-4 shadow-lg">
-            <div class="container mx-auto px-4 flex items-center justify-between">
-                <div class="flex items-center space-x-3">
-                    <img src="https://raw.githubusercontent.com/joaogonp/addon-marvel/main/assets/icon.png" alt="Marvel Universe Logo" class="w-12 h-12 object-contain">
-                    <h1 class="header-title text-2xl md:text-3xl font-bold">Marvel Universe Addon</h1>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <button @click="toggleDarkMode" class="text-marvelgold hover:text-marvelgold-light" title="Toggle Dark Mode">
-                        <i class="fas" :class="darkMode ? 'fa-sun' : 'fa-moon'"></i>
-                    </button>
-                    <button 
-                        @click="generateLink" 
-                        class="marvel-button bg-marvelred text-white px-4 py-2 rounded-lg hover:bg-marvelred-dark disabled:opacity-50 disabled:cursor-not-allowed"
-                        :disabled="selectedCatalogs.length === 0"
-                    >
-                        <i class="fas fa-rocket mr-2"></i>Create Addon
-                    </button>
-                </div>
+        <!-- Hero section -->
+        <section class="hero py-20 md:py-32 relative">
+            <div class="particles">
+                <div v-for="n in 20" :key="n" class="particle" :style="{ 
+                    left: Math.random() * 100 + '%', 
+                    animationDelay: Math.random() * 5 + 's',
+                    animationDuration: 5 + Math.random() * 5 + 's'
+                }"></div>
             </div>
-        </header>
+            <div class="hero-content container mx-auto px-4 text-center">
+                <img src="https://raw.githubusercontent.com/joaogonp/addon-marvel/main/assets/icon.png" alt="Marvel Universe Logo" class="w-24 h-24 mx-auto mb-8 animate-scale-glow">
+                <h1 class="hero-title text-5xl md:text-6xl font-extrabold mb-6">Assemble Your Marvel Saga</h1>
+                <p class="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto mb-10">
+                    Forge a legendary Stremio addon with your chosen Marvel catalogs.
+                </p>
+                <button 
+                    @click="generateLink" 
+                    class="marvel-button bg-marvelred text-white px-8 py-4 rounded-lg text-lg font-semibold animate-scale-glow disabled:opacity-50 disabled:cursor-not-allowed"
+                    :disabled="selectedCatalogs.length === 0"
+                >
+                    <i class="fas fa-bolt mr-2"></i>Create Your Addon
+                </button>
+            </div>
+        </section>
 
         <!-- Main content -->
-        <main class="container mx-auto px-4 py-8">
-            <!-- Intro section -->
-            <section class="text-center mb-12">
-                <h2 class="text-3xl md:text-4xl font-extrabold mb-4">Forge Your Marvel Journey</h2>
-                <p class="text-lg text-gray-300 max-w-2xl mx-auto">
-                    Handpick your favorite Marvel catalogs to build a tailored Stremio addon that suits your fandom.
-                </p>
-                <div class="mt-6 flex justify-center space-x-4">
+        <main class="container mx-auto px-4 py-16 relative">
+            <!-- Filters and controls -->
+            <section class="mb-12 flex flex-col sm:flex-row justify-between items-center">
+                <div class="flex flex-wrap justify-center gap-4 mb-6 sm:mb-0">
+                    <button 
+                        @click="toggleCategoryFilter('')" 
+                        class="px-5 py-2 rounded-full text-sm font-semibold"
+                        :class="currentCategory === '' ? 'bg-marvelgold text-marveldark' : 'bg-marveldark-light text-gray-300 hover:bg-marveldark'"
+                    >
+                        All
+                    </button>
+                    <button 
+                        v-for="category in categories" 
+                        :key="category" 
+                        @click="toggleCategoryFilter(category)"
+                        class="px-5 py-2 rounded-full text-sm font-semibold"
+                        :class="currentCategory === category ? 'bg-marvelgold text-marveldark' : 'bg-marveldark-light text-gray-300 hover:bg-marveldark'"
+                    >
+                        {{ category }}
+                    </button>
+                </div>
+                <div class="flex space-x-4">
                     <button 
                         @click="selectAll" 
-                        class="marvel-button bg-marvelgold text-marveldark px-4 py-2 rounded-lg hover:bg-marvelgold-light"
+                        class="marvel-button bg-marvelblue text-white px-4 py-2 rounded-lg hover:bg-marvelblue-dark"
                     >
-                        <i class="fas fa-check-circle mr-2"></i>Pick All
+                        <i class="fas fa-check-circle mr-2"></i>All
                     </button>
                     <button 
                         @click="deselectAll" 
-                        class="marvel-button bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
+                        class="marvel-button bg-marveldark-light text-white px-4 py-2 rounded-lg hover:bg-marveldark"
                     >
                         <i class="fas fa-times-circle mr-2"></i>Clear
+                    </button>
+                    <button @click="toggleDarkMode" class="marvel-button bg-marveldark-light text-white px-4 py-2 rounded-lg hover:bg-marveldark">
+                        <i class="fas" :class="darkMode ? 'fa-sun' : 'fa-moon'"></i>
                     </button>
                 </div>
             </section>
 
-            <!-- Filters -->
-            <section class="mb-8 flex justify-center space-x-4">
-                <button 
-                    @click="toggleCategoryFilter('')" 
-                    class="px-4 py-2 rounded-full text-sm font-medium"
-                    :class="currentCategory === '' ? 'bg-marvelred text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'"
-                >
-                    All
-                </button>
-                <button 
-                    v-for="category in categories" 
-                    :key="category" 
-                    @click="toggleCategoryFilter(category)"
-                    class="px-4 py-2 rounded-full text-sm font-medium"
-                    :class="currentCategory === category ? 'bg-marvelred text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'"
-                >
-                    {{ category }}
-                </button>
-            </section>
-
             <!-- Selected catalogs -->
-            <div class="mb-8 bg-marveldark-light rounded-lg p-4 flex items-center justify-between">
-                <span class="text-lg">
-                    <strong>{{ selectedCatalogs.length }}</strong> {{ selectedCatalogs.length === 1 ? 'Catalog Selected' : 'Catalogs Selected' }}
+            <div class="mb-12 bg-marveldark-light rounded-lg p-5 flex items-center justify-between shadow-cosmic">
+                <span class="text-lg font-semibold">
+                    <span class="text-marvelgold">{{ selectedCatalogs.length }}</span> {{ selectedCatalogs.length === 1 ? 'Catalog Selected' : 'Catalogs Selected' }}
                 </span>
                 <span class="text-sm text-gray-400">
-                    <i class="fas fa-info-circle mr-1"></i>Click cards to select
+                    <i class="fas fa-info-circle mr-1"></i>Click to toggle
                 </span>
             </div>
 
             <!-- Catalog cards -->
-            <div class="masonry-grid">
-                <transition-group name="rotate-fade" tag="div" class="masonry-grid">
+            <section class="catalog-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                <transition-group name="float-in" tag="div" class="catalog-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                     <div 
                         v-for="catalog in filteredCatalogs" 
                         :key="catalog.id" 
                         @click="toggleCatalog(catalog)"
-                        class="masonry-item catalog-card rounded-lg shadow-marvel-card cursor-pointer min-h-[250px] flex flex-col justify-end"
+                        class="catalog-card shadow-card-float cursor-pointer min-h-[300px] flex flex-col justify-end"
                         :class="{'selected': selectedCatalogs.includes(catalog.id)}"
                         :style="{ backgroundImage: `url(${getCatalogImage(catalog.id)})` }"
                     >
-                        <div class="card-content p-4">
-                            <div class="flex items-center mb-2">
-                                <i :class="'fas fa-' + getIconForCatalog(catalog)" class="text-3xl text-marvelgold mr-3"></i>
-                                <h3 class="text-lg font-bold">{{ catalog.name }}</h3>
+                        <div class="card-content p-6">
+                            <div class="flex items-center mb-4">
+                                <i :class="'fas fa-' + getIconForCatalog(catalog)" class="text-3xl text-marvelgold mr-4"></i>
+                                <h3 class="text-xl font-bold">{{ catalog.name }}</h3>
                             </div>
-                            <p class="text-sm text-gray-300 mb-3">{{ catalog.description }}</p>
+                            <p class="text-sm text-gray-300 mb-5">{{ catalog.description }}</p>
                             <div class="flex justify-between items-center">
-                                <span class="text-xs bg-marveldark px-2 py-1 rounded-full">{{ catalog.category }}</span>
+                                <span class="text-xs bg-marveldark px-3 py-1 rounded-full">{{ catalog.category }}</span>
                                 <input 
                                     type="checkbox" 
                                     :id="catalog.id" 
                                     :value="catalog.id" 
                                     v-model="selectedCatalogs"
-                                    class="h-5 w-5 accent-marvelgold"
+                                    class="h-6 w-6 accent-marvelgold"
                                     @click.stop
                                 >
                             </div>
                         </div>
                     </div>
                 </transition-group>
-            </div>
+            </section>
 
             <!-- Installation panel -->
-            <transition name="fade">
-                <div v-if="showInstallPanel" class="bg-marveldark-light rounded-lg p-6 mt-12 shadow-marvel-glow">
-                    <h3 class="text-2xl font-bold mb-4">Your Marvel Addon Awaits!</h3>
-                    <p class="text-gray-300 mb-6">Launch your custom Marvel Universe addon in Stremio with the link below:</p>
+            <transition name="float-in">
+                <div v-if="showInstallPanel" class="bg-marveldark-light rounded-lg p-8 mt-16 shadow-cosmic">
+                    <h3 class="text-3xl font-bold mb-5 text-marvelgold">Your Saga is Ready!</h3>
+                    <p class="text-gray-300 mb-6 text-lg">Launch your custom Marvel addon in Stremio now.</p>
                     <div class="flex flex-col sm:flex-row gap-4 mb-6">
                         <a 
                             :href="stremioUrl" 
-                            class="marvel-button bg-marvelred text-white px-6 py-3 rounded-lg hover:bg-marvelred-dark text-center"
+                            class="marvel-button bg-marvelred text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-marvelred-dark animate-scale-glow text-center"
                         >
-                            <i class="fas fa-play-circle mr-2"></i>Install Now
+                            <i class="fas fa-play mr-2"></i>Install Now
                         </a>
                         <button 
                             @click="copyToClipboard" 
-                            class="marvel-button bg-gray-700 text-white px-6 py-3 rounded-lg hover:bg-gray-600"
+                            class="marvel-button bg-marveldark text-white px-8 py-4 rounded-lg text-lg hover:bg-marveldark-light"
                         >
                             <i class="fas" :class="copied ? 'fa-check' : 'fa-copy'" class="mr-2"></i>
                             {{ copied ? 'Copied!' : 'Copy Link' }}
                         </button>
                     </div>
-                    <div class="bg-marveldark p-4 rounded-lg font-mono text-sm break-all">
+                    <div class="bg-marveldark p-4 rounded-lg font-mono text-sm text-gray-300 break-all">
                         {{ installUrl }}
                     </div>
                     <div class="mt-6">
-                        <h4 class="text-lg font-semibold mb-3">Your Selection ({{ selectedCatalogs.length }})</h4>
+                        <h4 class="text-lg font-semibold mb-4 text-marvelgold">Selected Catalogs ({{ selectedCatalogs.length }})</h4>
                         <div class="flex flex-wrap gap-3">
                             <span 
                                 v-for="id in selectedCatalogs" 
                                 :key="id"
-                                class="bg-marvelgold text-marveldark px-3 py-1 rounded-full text-sm flex items-center"
+                                class="bg-marvelgold text-marveldark px-4 py-2 rounded-full text-sm flex items-center"
                             >
                                 <i class="fas mr-2" :class="'fa-' + getIconForCatalogById(id)"></i>
                                 {{ getCatalogName(id) }}
@@ -310,28 +351,28 @@
         </main>
 
         <!-- Footer -->
-        <footer class="bg-marveldark-dark py-8">
+        <footer class="bg-marveldark py-12 relative">
             <div class="container mx-auto px-4 text-center">
-                <div class="flex justify-center items-center mb-4">
-                    <img src="https://raw.githubusercontent.com/joaogonp/addon-marvel/main/assets/icon.png" alt="Marvel Universe Logo" class="w-10 h-10 object-contain mr-3">
-                    <span class="text-lg font-bold">Marvel Universe Addon</span>
+                <div class="flex justify-center items-center mb-6">
+                    <img src="https://raw.githubusercontent.com/joaogonp/addon-marvel/main/assets/icon.png" alt="Marvel Universe Logo" class="w-14 h-14 object-contain mr-4">
+                    <span class="text-2xl font-bold text-marvelgold">Marvel Universe Addon</span>
                 </div>
-                <p class="text-gray-400 mb-4">Your gateway to the Marvel multiverse on Stremio</p>
-                <div class="flex justify-center space-x-6">
+                <p class="text-gray-400 mb-8 text-lg">Unleash the multiverse on Stremio.</p>
+                <div class="flex justify-center space-x-8">
                     <a href="https://github.com/joaogonp/addon-marvel" target="_blank" class="text-marvelgold hover:text-marvelgold-light">
-                        <i class="fab fa-github text-2xl"></i>
+                        <i class="fab fa-github text-3xl"></i>
                     </a>
                     <a href="https://github.com/joaogonp/addon-marvel/issues" target="_blank" class="text-marvelgold hover:text-marvelgold-light">
-                        <i class="fas fa-bug text-2xl"></i>
+                        <i class="fas fa-bug text-3xl"></i>
                     </a>
                 </div>
-                <p class="text-sm text-gray-500 mt-4">© 2025 Marvel Universe Addon</p>
+                <p class="text-sm text-gray-500 mt-8">© 2025 Marvel Universe Addon</p>
             </div>
         </footer>
 
         <!-- Copy notification -->
         <transition name="fade">
-            <div v-if="showCopiedToast" class="notification bg-marvelgold text-marveldark px-4 py-2 rounded-lg shadow-lg">
+            <div v-if="showCopiedToast" class="notification bg-marvelgold text-marveldark px-5 py-3 rounded-lg shadow-cosmic">
                 <i class="fas fa-check mr-2"></i>Link copied!
             </div>
         </transition>
@@ -346,35 +387,35 @@
                         id: 'marvel-mcu', 
                         name: 'MCU Chronological', 
                         category: 'Timeline',
-                        description: 'Dive into the MCU in story-driven order',
+                        description: 'The MCU in epic story order.',
                         icon: 'calendar-alt'
                     },
                     { 
                         id: 'xmen', 
-                        name: 'X-Men Saga', 
+                        name: 'X-Men Legacy', 
                         category: 'Character',
-                        description: 'Every X-Men film and spinoff',
+                        description: 'Every X-Men adventure.',
                         icon: 'mask'
                     },
                     { 
                         id: 'movies', 
-                        name: 'Marvel Films', 
+                        name: 'Marvel Movies', 
                         category: 'Content Type',
-                        description: 'All Marvel cinematic releases',
+                        description: 'Blockbuster Marvel films.',
                         icon: 'film'
                     },
                     { 
                         id: 'series', 
-                        name: 'Marvel Shows', 
+                        name: 'Marvel Series', 
                         category: 'Content Type',
-                        description: 'Binge-worthy Marvel TV series',
+                        description: 'Gripping Marvel TV shows.',
                         icon: 'tv'
                     },
                     { 
                         id: 'animations', 
                         name: 'Marvel Animations', 
                         category: 'Content Type',
-                        description: 'Vibrant Marvel animated stories',
+                        description: 'Animated Marvel epics.',
                         icon: 'play-circle'
                     }
                 ],
@@ -385,7 +426,7 @@
                 currentCategory: '',
                 copied: false,
                 showCopiedToast: false,
-                darkMode: true // Default to dark mode for Marvel theme
+                darkMode: true
             },
             computed: {
                 categories() {
@@ -426,7 +467,7 @@
                 },
                 generateLink() {
                     if (this.selectedCatalogs.length === 0) {
-                        alert('Select at least one catalog to proceed.');
+                        alert('Select at least one catalog to assemble your addon.');
                         return;
                     }
 
@@ -477,7 +518,7 @@
                     return catalog ? (catalog.icon || 'folder') : 'folder';
                 },
                 getCatalogImage(id) {
-                    // Placeholder images (replace with real assets if available)
+                    // Replace with real assets from your repository
                     const imageMap = {
                         'marvel-mcu': 'https://images.unsplash.com/photo-1621849400072-3f4d1eb38892?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
                         'xmen': 'https://images.unsplash.com/photo-1621849400072-3f4d1eb38892?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
