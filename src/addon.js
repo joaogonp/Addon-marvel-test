@@ -63,24 +63,26 @@ app.get('/api/validate-rpdb', async (req, res) => {
         return res.status(400).json({ valid: false, error: 'No RPDB API Key provided.' });
     }
 
-    const testUrl = `https://api.ratingposterdb.com/posters/movie/tt0848228?api_key=${encodeURIComponent(rpdbKey)}`;
+    const testUrl = `https://api.ratingposterdb.com/ratings/movie/tt1270798?api_key=${encodeURIComponent(rpdbKey)}`;
     try {
-        const response = await axios.get(testUrl);
-        if (response.status === 200 && response.data?.poster) {
+        const response = await axios.get(testUrl, { validateStatus: status => status < 500 });
+        console.log(`RPDB validation response for key ${rpdbKey.substring(0, 4)}...:`, response.data);
+        if (response.status === 200) {
             console.log(`RPDB key validation successful for key: ${rpdbKey.substring(0, 4)}...`);
             return res.json({ valid: true });
         } else {
             console.warn(`RPDB key validation failed for key: ${rpdbKey.substring(0, 4)}... (Status: ${response.status})`);
-            return res.status(400).json({ valid: false, error: 'Invalid RPDB API Key or no poster returned.' });
+            return res.status(400).json({ valid: false, error: `Invalid RPDB API Key (Status: ${response.status}).` });
         }
     } catch (error) {
         console.warn(`RPDB key validation error for key: ${rpdbKey.substring(0, 4)}...`, error.message);
         let errorMessage = 'Invalid RPDB API Key.';
         if (error.response) {
+            console.log(`RPDB error response:`, error.response.data);
             if (error.response.status === 403) {
-                errorMessage = 'RPDB API Key is unauthorized (403).';
+                errorMessage = 'RPDB API Key is unauthorized (403). Check if the key is valid.';
             } else if (error.response.status === 429) {
-                errorMessage = 'RPDB API Key rate limit exceeded (429).';
+                errorMessage = 'RPDB API Key rate limit exceeded (429). Try again later.';
             } else {
                 errorMessage = `RPDB API error (Status: ${error.response.status}).`;
             }
@@ -89,10 +91,11 @@ app.get('/api/validate-rpdb', async (req, res) => {
     }
 });
 
-// Endpoint para limpar cache (útil para testes)
+// Endpoint para limpar cache
 app.get('/api/clear-cache', (req, res) => {
     cachedCatalog = {};
-    console.log('Cache cleared.');
+    invalidRpdbKeys.clear();
+    console.log('Cache and invalid RPDB keys cleared.');
     res.json({ message: 'Cache cleared successfully.' });
 });
 
@@ -128,10 +131,11 @@ async function validateRpdbKey(rpdbKey) {
         return false;
     }
 
-    const testUrl = `https://api.ratingposterdb.com/posters/movie/tt0848228?api_key=${rpdbKey}`;
+    const testUrl = `https://api.ratingposterdb.com/ratings/movie/tt1270798?api_key=${rpdbKey}`;
     try {
-        const res = await axios.get(testUrl);
-        if (res.status === 200 && res.data?.poster) {
+        const res = await axios.get(testUrl, { validateStatus: status => status < 500 });
+        console.log(`RPDB validation response for key ${rpdbKey.substring(0, 4)}...:`, res.data);
+        if (res.status === 200) {
             return true;
         }
     } catch (err) {
@@ -174,15 +178,17 @@ async function getRpdbRatings(imdbId, tmdbId, type, rpdbKey) {
         }
     }
 
-    // Buscar poster
-    const posterUrl = `https://api.ratingposterdb.com/posters/${type}/${id}?api_key=${rpdbKey}`;
+    // Buscar poster (apenas para Tier 1)
     let posterData = {};
+    const posterUrl = `https://api.ratingposterdb.com/posters/${type}/${id}?api_key=${rpdbKey}`;
     try {
         const posterRes = await axios.get(posterUrl);
         posterData = posterRes.data || {};
         console.log(`RPDB poster fetched for ${id}:`, posterData.poster || 'No poster');
     } catch (err) {
-        if (err.response?.status !== 403) {
+        if (err.response?.status === 403) {
+            console.warn(`RPDB poster access denied for ${id} (likely not Tier 1).`);
+        } else if (err.response?.status !== 404) {
             console.error(`RPDB poster error for ${id}: ${err.message}`);
         }
     }
@@ -276,8 +282,8 @@ async function fetchAdditionalData(item, rpdbKey) {
             }
         });
 
-        const rpdbPromise = rpdbKey || process.env.RPDB_API_KEY
-            ? getRpdbRatings(lookupId, effectiveTmdbId, item.type, rpdbKey || process.env.RPDB_API_KEY)
+        const rpdbPromise = rpdbKey
+            ? getRpdbRatings(lookupId, effectiveTmdbId, item.type, rpdbKey)
             : Promise.resolve({});
 
         console.log(`Fetching data for ${item.title} (${lookupId})...`);
@@ -293,23 +299,34 @@ async function fetchAdditionalData(item, rpdbKey) {
         tmdbImagesData = tmdbImagesRes.data || {};
         rpdbData = rpdbRes || {};
 
-        // Priorizar poster do RPDB (se disponível), depois TMDb, OMDb, e por último item.poster
+        // Verificar se a URL do poster é válida
+        async function isValidImageUrl(url) {
+            if (!url) return false;
+            try {
+                const res = await axios.head(url, { timeout: 5000 });
+                return res.status === 200 && res.headers['content-type'].startsWith('image/');
+            } catch {
+                return false;
+            }
+        }
+
+        // Priorizar poster: RPDB (se chave válida e Tier 1) > item.poster > TMDb > OMDb > fallback
         let poster = null;
-        if (rpdbData.poster) {
+        if (rpdbKey && rpdbData.poster && (await isValidImageUrl(rpdbData.poster))) {
             poster = rpdbData.poster;
             console.log(`Using RPDB poster for ${item.title}: ${poster}`);
-        } else if (tmdbData.poster_path) {
-            poster = `https://image.tmdb.org/t/p/w500${tmdbData.poster_path}`;
-            console.log(`Using TMDb poster for ${item.title}: ${poster}`);
-        } else if (omdbData.Poster && omdbData.Poster !== 'N/A') {
-            poster = omdbData.Poster;
-            console.log(`Using OMDb poster for ${item.title}: ${poster}`);
-        } else if (item.poster) {
+        } else if (item.poster && (await isValidImageUrl(item.poster))) {
             poster = item.poster;
             console.log(`Using data file poster for ${item.title}: ${poster}`);
+        } else if (tmdbData.poster_path && (await isValidImageUrl(`https://image.tmdb.org/t/p/w500${tmdbData.poster_path}`))) {
+            poster = `https://image.tmdb.org/t/p/w500${tmdbData.poster_path}`;
+            console.log(`Using TMDb poster for ${item.title}: ${poster}`);
+        } else if (omdbData.Poster && omdbData.Poster !== 'N/A' && (await isValidImageUrl(omdbData.Poster))) {
+            poster = omdbData.Poster;
+            console.log(`Using OMDb poster for ${item.title}: ${poster}`);
         } else {
             poster = 'https://m.media-amazon.com/images/M/MV5BMTc5MDE2ODcwNV5BMl5BanBnXkFtZTgwMzI2NzQ2NzM@._V1_SX300.jpg';
-            console.warn(`No poster found for ${item.title} (${lookupId}), using fallback.`);
+            console.warn(`No valid poster found for ${item.title} (${lookupId}), using fallback.`);
         }
 
         let logoUrl = null;
@@ -527,7 +544,7 @@ app.get('/catalog/:catalogsParam/manifest.json', (req, res) => {
         contactEmail: "jpnapsp@gmail.com",
         stremioAddonsConfig: {
             issuer: "https://stremio-addons.net",
-            signature: "eyJhbGciOiJkaXIiLCJlnmMiOiJBMTI4Q0JDLUhTMjU2In0..zTaTTCcviqQPiIvU4QDfCQ.wSlk8AoM4p2nvlvoQJEoLRRx5_Msnu37O9bAsgwhJTZYu4uXd7Cve9GaVXdnwZ4nAeNSsRSgp51mofhf0EVQYwx7jGxh4FEvs8MMuWeHQ9alNsqVuy3-Mc459B9myIT-.R_1iaQbNExj4loQJlyWYtA"
+            signature: "eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0..zTaTTCcviqQPiIvU4QDfCQ.wSlk8AoM4p2nvlvoQJEoLRRx5_Msnu37O9bAsgwhJTZYu4uXd7Cve9GaVXdnwZ4nAeNSsRSgp51mofhf0EVQYwx7jGxh4FEvs8MMuWeHQ9alNsqVuy3-Mc459B9myIT-.R_1iaQbNExj4loQJlyWYtA"
         }
     };
     
