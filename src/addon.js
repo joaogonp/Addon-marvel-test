@@ -71,7 +71,31 @@ async function getTmdbDetails(id, type) {
     }
 }
 
-// Função para buscar dados adicionais (OMDb e TMDb)
+// Função para buscar ratings do RPDB (opcional)
+async function getRpdbRatings(imdbId, tmdbId, type) {
+    const rpdbKey = process.env.RPDB_API_KEY;
+    if (!rpdbKey) {
+        return {};
+    }
+
+    const id = imdbId && imdbId.startsWith('tt') ? imdbId : tmdbId ? `tmdb:${tmdbId}` : null;
+    if (!id) {
+        console.warn('No valid IMDb ID or TMDb ID for RPDB query.');
+        return {};
+    }
+
+    const url = `https://api.ratingposterdb.com/ratings/${type}/${id}?api_key=${rpdbKey}`;
+    try {
+        const res = await axios.get(url);
+        console.log(`RPDB ratings fetched for ${id}:`, res.data);
+        return res.data || {};
+    } catch (err) {
+        console.error(`RPDB error for ${id}: ${err.message}`);
+        return {};
+    }
+}
+
+// Função para buscar dados adicionais (TMDb, OMDb, RPDB opcional)
 async function fetchAdditionalData(item) {
     console.log('\n--- Fetching details for item: ---', item);
 
@@ -95,6 +119,7 @@ async function fetchAdditionalData(item) {
             description: item.overview || 'Metadata lookup unavailable (API key missing).',
             releaseInfo: item.releaseYear || 'N/A',
             imdbRating: 'N/A',
+            rottenTomatoesRating: 'N/A',
             genres: item.genres ? item.genres.map(g => g.name) : []
         };
     }
@@ -102,6 +127,7 @@ async function fetchAdditionalData(item) {
     let omdbData = {};
     let tmdbData = {};
     let tmdbImagesData = {};
+    let rpdbData = {};
 
     try {
         const omdbPromise = isImdb
@@ -144,16 +170,20 @@ async function fetchAdditionalData(item) {
             }
         });
 
+        const rpdbPromise = process.env.RPDB_API_KEY ? getRpdbRatings(lookupId, effectiveTmdbId, item.type) : Promise.resolve({});
+
         console.log(`Fetching data for ${item.title} (${lookupId})...`);
-        const [omdbRes, tmdbDetailsResult, tmdbImagesRes] = await Promise.all([
+        const [omdbRes, tmdbDetailsResult, tmdbImagesRes, rpdbRes] = await Promise.all([
             omdbPromise,
             tmdbDetailsPromise,
-            tmdbImagesPromise
+            tmdbImagesPromise,
+            rpdbPromise
         ]);
 
         omdbData = omdbRes.data || {};
         tmdbData = tmdbDetailsResult.data || {};
         tmdbImagesData = tmdbImagesRes.data || {};
+        rpdbData = rpdbRes || {};
 
         let poster = item.poster || null;
         if (!poster && tmdbData.poster_path) {
@@ -185,7 +215,8 @@ async function fetchAdditionalData(item) {
             poster: poster,
             description: description,
             releaseInfo: item.releaseYear || (tmdbData.release_date ? tmdbData.release_date.split('-')[0] : (tmdbData.first_air_date ? tmdbData.first_air_date.split('-')[0] : 'N/A')),
-            imdbRating: omdbData.imdbRating || 'N/A',
+            imdbRating: rpdbData.imdb?.rating || omdbData.imdbRating || 'N/A',
+            rottenTomatoesRating: rpdbData.rotten_tomatoes?.rating || 'N/A',
             genres: tmdbData.genres ? tmdbData.genres.map(g => g.name) : (item.genres ? item.genres.map(g => g.name) : ['Action', 'Adventure'])
         };
 
