@@ -1,14 +1,14 @@
 <!DOCTYPE html>
-<html lang="en" class="light">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DC Universe - Configure Addon</title>
-    <!-- Import Vue.js -->
+    <title>Marvel Universe - Craft Your Addon</title>
+    <!-- Vue.js -->
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
-    <!-- Import Tailwind CSS via CDN for modern styling -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font Awesome for icons -->
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script>
         tailwind.config = {
@@ -16,20 +16,34 @@
             theme: {
                 extend: {
                     colors: {
-                        dcblue: {
-                            light: '#0096e5',
-                            DEFAULT: '#0078d7',
-                            dark: '#0056a3',
+                        marvelred: {
+                            light: '#ff6b6b',
+                            DEFAULT: '#dc2626',
+                            dark: '#b91c1c',
                         },
-                        dcgray: {
-                            light: '#f7f9fc',
-                            DEFAULT: '#e0e6ed',
-                            dark: '#8492a6',
+                        marvelgold: {
+                            light: '#fef08a',
+                            DEFAULT: '#facc15',
+                            dark: '#ca8a04',
+                        },
+                        marveldark: {
+                            light: '#1f2937',
+                            DEFAULT: '#111827',
+                            dark: '#0f172a',
                         }
                     },
                     boxShadow: {
-                        'dc': '0 5px 15px -3px rgba(0, 120, 215, 0.1), 0 4px 6px -2px rgba(0, 120, 215, 0.05)',
-                        'dc-hover': '0 10px 25px -3px rgba(0, 120, 215, 0.25), 0 4px 6px -2px rgba(0, 120, 215, 0.1)',
+                        'marvel-glow': '0 0 15px rgba(220, 38, 38, 0.3)',
+                        'marvel-card': '0 4px 20px rgba(0, 0, 0, 0.2)',
+                    },
+                    keyframes: {
+                        spinGlow: {
+                            '0%, 100%': { boxShadow: '0 0 10px rgba(220, 38, 38, 0.5)' },
+                            '50%': { boxShadow: '0 0 20px rgba(220, 38, 38, 0.8)' },
+                        }
+                    },
+                    animation: {
+                        'spin-glow': 'spinGlow 2s ease-in-out infinite',
                     }
                 }
             }
@@ -37,610 +51,288 @@
     </script>
     <style>
         [v-cloak] { display: none; }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
+
+        /* Custom animations */
+        .rotate-fade-enter-active, .rotate-fade-leave-active {
+            transition: all 0.4s ease;
         }
-        
-        .animate-pulse {
-            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        .rotate-fade-enter, .rotate-fade-leave-to {
+            opacity: 0;
+            transform: rotateY(10deg);
         }
-        
+
         .fade-enter-active, .fade-leave-active {
-            transition: opacity .5s;
+            transition: opacity 0.5s;
         }
         .fade-enter, .fade-leave-to {
             opacity: 0;
         }
-        
-        .slide-fade-enter-active {
-            transition: all 0.4s ease-out;
-        }
-        .slide-fade-leave-active {
-            transition: all 0.3s cubic-bezier(1.0, 0.5, 0.8, 1.0);
-        }
-        .slide-fade-enter, .slide-fade-leave-to {
-            transform: translateY(20px);
-            opacity: 0;
-        }
-        
-        .catalog-card {
-            transition: all 0.3s ease;
-            border: 2px solid transparent;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        }
-        
-        .catalog-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        }
-        
-        .catalog-card.selected {
-            border-color: #0078d7;
-            background-color: rgba(0, 120, 215, 0.05);
-            box-shadow: 0 0 0 3px rgba(0, 120, 215, 0.2);
-        }
-        
-        .dark .catalog-card.selected {
-            border-color: #0096e5;
-            background-color: rgba(0, 150, 229, 0.1);
-            box-shadow: 0 0 0 3px rgba(0, 150, 229, 0.2);
-        }
-        
-        .category-badge {
-            font-size: 0.65rem;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-        }
-        
-        .dc-button {
-            position: relative;
-            overflow: hidden;
-            transition: all 0.3s;
-        }
-        
-        .dc-button::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 5px;
-            height: 5px;
-            background: rgba(255, 255, 255, 0.5);
-            opacity: 0;
-            border-radius: 100%;
-            transform: scale(1, 1) translate(-50%);
-            transform-origin: 50% 50%;
-        }
-        
-        @keyframes ripple {
-            0% {
-                transform: scale(0, 0);
-                opacity: 0.5;
-            }
-            100% {
-                transform: scale(100, 100);
-                opacity: 0;
-            }
-        }
-        
-        .dc-button:focus:not(:active)::after {
-            animation: ripple 1s ease-out;
-        }
-        
-        .tooltip {
-            position: relative;
-        }
-        
-        .tooltip::after {
-            content: attr(data-tooltip);
-            position: absolute;
-            bottom: 125%;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 5px 10px;
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            border-radius: 4px;
-            font-size: 12px;
-            white-space: nowrap;
-            visibility: hidden;
-            opacity: 0;
-            transition: all 0.3s;
-        }
-        
-        .tooltip:hover::after {
-            visibility: visible;
-            opacity: 1;
-        }
-        
-        .copy-notification {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background-color: #333;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 4px;
-            z-index: 1000;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
 
-        .dark .copy-notification {
-            background-color: #1e293b;
-        }
-        
-        .filter-chip {
-            transition: all 0.2s;
-            cursor: pointer;
-        }
-        
-        .filter-chip:hover {
-            background-color: #e0e7ff;
-        }
-        
-        .dark .filter-chip:hover {
-            background-color: #1e3a8a;
-        }
-        
-        .filter-chip.active {
-            background-color: #3b82f6;
-            color: white;
-        }
-        
-        .catalog-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 1.5rem;
-        }
-        
-        @media (max-width: 640px) {
-            .catalog-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .dc-header-content {
-                padding-top: 1.5rem !important;
-                padding-bottom: 1.5rem !important;
-            }
-            
-            .dc-header-content h1 {
-                font-size: 2rem !important;
-            }
-            
-            .dc-header-content p {
-                font-size: 1rem !important;
-            }
-            
-            .dc-header-content img {
-                width: 5rem !important;
-                height: 5rem !important;
-            }
-            
-            .navbar .container {
-                padding-left: 0.75rem !important;
-                padding-right: 0.75rem !important;
-            }
-            
-            .navbar .font-bold {
-                font-size: 0.875rem !important;
-            }
-            
-            .navbar img {
-                width: 1.75rem !important;
-                height: 1.75rem !important;
-            }
-            
-            .filter-chip {
-                margin-bottom: 0.5rem;
-            }
-        }
-        
-        /* For super small screens */
-        @media (max-width: 360px) {
-            .navbar .container {
-                flex-direction: column;
-                gap: 0.5rem;
-                padding-top: 0.5rem;
-                padding-bottom: 0.5rem;
-            }
-            
-            .navbar .flex.items-center.space-x-4 {
-                width: 100%;
-                justify-content: space-between;
-            }
-            
-            .dark-mode-toggle {
-                margin: 0 0.25rem;
-            }
-        }
-        
-        .dc-header {
+        /* Card styles */
+        .catalog-card {
+            background-size: cover;
+            background-position: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
             position: relative;
-            background: linear-gradient(135deg, #0078d7 0%, #004b9a 100%);
-            color: white;
             overflow: hidden;
         }
-        
-        .dc-header::before {
+        .catalog-card::before {
             content: '';
             position: absolute;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background-image: url('https://github.com/tapframe/addon-dc/blob/main/assets/background.jpg?raw=true');
-            background-size: cover;
-            background-position: center;
-            opacity: 0.4;
+            background: linear-gradient(to bottom, rgba(17, 24, 39, 0.7), rgba(17, 24, 39, 0.9));
             z-index: 0;
         }
-        
-        .dc-header-content {
+        .catalog-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+        .catalog-card.selected {
+            border: 3px solid #facc15;
+        }
+        .dark .catalog-card.selected {
+            border-color: #fef08a;
+        }
+        .card-content {
             position: relative;
             z-index: 1;
         }
 
-        .navbar {
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-        }
-
-        .dark .navbar {
-            background-color: rgba(15, 23, 42, 0.8);
-        }
-
-        .dark-mode-toggle {
-            width: 48px;
-            height: 24px;
-            border-radius: 12px;
-            background-color: #e2e8f0;
+        /* Button glow effect */
+        .marvel-button {
             position: relative;
-            cursor: pointer;
-            transition: all 0.3s;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .marvel-button:hover {
+            box-shadow: 0 0 15px rgba(220, 38, 38, 0.5);
         }
 
-        .dark .dark-mode-toggle {
-            background-color: #334155;
+        /* Masonry grid */
+        .masonry-grid {
+            column-count: 1;
+            column-gap: 1.5rem;
+        }
+        @media (min-width: 640px) {
+            .masonry-grid {
+                column-count: 2;
+            }
+        }
+        @media (min-width: 1024px) {
+            .masonry-grid {
+                column-count: 3;
+            }
+        }
+        .masonry-item {
+            break-inside: avoid;
+            margin-bottom: 1.5rem;
         }
 
-        .dark-mode-toggle::after {
-            content: '';
-            position: absolute;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background-color: white;
-            top: 2px;
-            left: 2px;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        /* Header styles */
+        .header {
+            background: linear-gradient(45deg, #111827 0%, #dc2626 100%);
         }
 
-        .dark .dark-mode-toggle::after {
-            transform: translateX(24px);
-            background-color: #0096e5;
+        /* Notification styles */
+        .notification {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 1000;
         }
 
-        .catalog-card-inner {
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .card-main-content {
-            flex-grow: 1;
-        }
-        
-        /* Mobile tap targets */
+        /* Responsive adjustments */
         @media (max-width: 640px) {
-            .filter-chip, button, .catalog-card {
-                -webkit-tap-highlight-color: transparent;
+            .header-title {
+                font-size: 1.25rem !important;
             }
-            
-            .filter-chip {
-                padding: 0.5rem 0.75rem;
+            .catalog-card {
+                min-height: 200px !important;
             }
-            
-            button {
-                min-height: 44px;
-            }
-            
-            input[type="checkbox"] {
-                min-width: 24px;
-                min-height: 24px;
+            .marvel-button {
+                padding: 0.5rem 1rem;
             }
         }
     </style>
 </head>
-<body class="bg-dcgray-light min-h-screen dark:bg-slate-900 dark:text-white transition-colors duration-300">
+<body class="bg-marveldark dark:bg-marveldark-dark text-white">
     <div id="app" v-cloak>
-        <!-- Navigation bar -->
-        <nav class="navbar sticky top-0 z-50 shadow-md bg-white/80 dark:bg-slate-900/80 border-b dark:border-slate-800">
-            <div class="container mx-auto px-4 py-3 flex items-center justify-between">
-                <div class="flex items-center space-x-2">
-                    <img src="https://github.com/tapframe/addon-dc/blob/main/assets/icon.png?raw=true" alt="DC Universe Logo" class="w-8 h-8 object-contain">
-                    <span class="font-bold text-lg">DC Universe Addon</span>
+        <!-- Header -->
+        <header class="header py-4 shadow-lg">
+            <div class="container mx-auto px-4 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <img src="https://raw.githubusercontent.com/joaogonp/addon-marvel/main/assets/icon.png" alt="Marvel Universe Logo" class="w-12 h-12 object-contain">
+                    <h1 class="header-title text-2xl md:text-3xl font-bold">Marvel Universe Addon</h1>
                 </div>
-                
                 <div class="flex items-center space-x-4">
-                    <div class="flex items-center space-x-2">
-                        <i class="fas fa-sun text-yellow-500 dark:text-yellow-400"></i>
-                        <div class="dark-mode-toggle" @click="toggleDarkMode"></div>
-                        <i class="fas fa-moon text-slate-700 dark:text-blue-300"></i>
-                    </div>
-                    
+                    <button @click="toggleDarkMode" class="text-marvelgold hover:text-marvelgold-light" title="Toggle Dark Mode">
+                        <i class="fas" :class="darkMode ? 'fa-sun' : 'fa-moon'"></i>
+                    </button>
                     <button 
                         @click="generateLink" 
-                        class="dc-button bg-dcblue text-white px-4 py-2 rounded-md hover:bg-dcblue-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-dcblue transition-all"
+                        class="marvel-button bg-marvelred text-white px-4 py-2 rounded-lg hover:bg-marvelred-dark disabled:opacity-50 disabled:cursor-not-allowed"
                         :disabled="selectedCatalogs.length === 0"
-                        :class="{'opacity-50 cursor-not-allowed': selectedCatalogs.length === 0}"
                     >
-                        <i class="fas fa-magic mr-2"></i>Generate Link
+                        <i class="fas fa-rocket mr-2"></i>Create Addon
                     </button>
-                </div>
-            </div>
-            <!-- Prompt to regenerate -->
-            <transition name="fade">
-                <div v-if="promptToRegenerate" class="bg-yellow-100 dark:bg-yellow-900 border-l-4 border-yellow-500 dark:border-yellow-400 text-yellow-700 dark:text-yellow-200 p-3 text-center text-sm" role="alert">
-                    <p><i class="fas fa-exclamation-triangle mr-2"></i>Your catalog selection has changed. Please click "Generate Link" again to update your installation URL.</p>
-                </div>
-            </transition>
-        </nav>
-
-        <header class="dc-header shadow-lg relative mt-0">
-            <div class="dc-header-content container mx-auto px-4 py-16 md:py-20 flex flex-col items-center">
-                <img src="https://github.com/tapframe/addon-dc/blob/main/assets/icon.png?raw=true" alt="DC Universe Logo" class="w-24 h-24 object-contain mb-4 shadow-lg rounded-full bg-white dark:bg-slate-800 p-3">
-                <h1 class="text-3xl md:text-5xl font-bold mb-2 text-center">DC Universe Addon</h1>
-                <p class="text-lg md:text-xl opacity-90 max-w-xl text-center">Create your personalized DC collection by selecting exactly which catalogs you want to include</p>
-                
-                <div class="mt-8 bg-white/20 backdrop-blur-sm rounded-full py-2 px-4 md:py-3 md:px-6 flex items-center text-sm md:text-base">
-                    <i class="fas fa-info-circle mr-2"></i>
-                    <span>{{ catalogs.length }} catalogs available for customization</span>
                 </div>
             </div>
         </header>
 
-        <main class="container mx-auto px-4 py-6 md:py-8">
-            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-dc p-4 md:p-8 mb-6 md:mb-8">
-                <!-- Content header with selection tools -->
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 pb-6 border-b border-dcgray dark:border-slate-700">
-                    <div>
-                        <h2 class="text-xl md:text-2xl font-bold text-gray-800 dark:text-white mb-2">Customize Your Collection</h2>
-                        <p class="text-sm md:text-base text-gray-600 dark:text-gray-300">Select the catalogs you want in your addon</p>
-                    </div>
-                    
-                    <div class="flex flex-wrap gap-2 mt-4 md:mt-0">
-                        <button 
-                            @click="selectAll" 
-                            class="dc-button bg-dcblue text-white px-4 py-2 rounded-md hover:bg-dcblue-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-dcblue transition-all"
-                        >
-                            <i class="fas fa-check-double mr-2"></i>Select All
-                        </button>
-                        <button 
-                            @click="deselectAll" 
-                            class="dc-button bg-gray-200 dark:bg-slate-700 text-gray-800 dark:text-white px-4 py-2 rounded-md hover:bg-gray-300 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-all"
-                        >
-                            <i class="fas fa-times mr-2"></i>Deselect All
-                        </button>
-                    </div>
+        <!-- Main content -->
+        <main class="container mx-auto px-4 py-8">
+            <!-- Intro section -->
+            <section class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-extrabold mb-4">Forge Your Marvel Journey</h2>
+                <p class="text-lg text-gray-300 max-w-2xl mx-auto">
+                    Handpick your favorite Marvel catalogs to build a tailored Stremio addon that suits your fandom.
+                </p>
+                <div class="mt-6 flex justify-center space-x-4">
+                    <button 
+                        @click="selectAll" 
+                        class="marvel-button bg-marvelgold text-marveldark px-4 py-2 rounded-lg hover:bg-marvelgold-light"
+                    >
+                        <i class="fas fa-check-circle mr-2"></i>Pick All
+                    </button>
+                    <button 
+                        @click="deselectAll" 
+                        class="marvel-button bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
+                    >
+                        <i class="fas fa-times-circle mr-2"></i>Clear
+                    </button>
                 </div>
-                
-                <!-- Category filters -->
-                <div class="mb-6 md:mb-8 overflow-x-auto pb-2">
-                    <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Browse by Category</h3>
-                    <div class="flex flex-wrap gap-2">
-                        <div 
-                            @click="toggleCategoryFilter('')"
-                            class="filter-chip px-3 py-1 rounded-full text-sm"
-                            :class="[currentCategory === '' ? 'active' : 'bg-gray-100 dark:bg-slate-700']"
-                        >
-                            <i class="fas fa-th-large mr-1"></i>All
-                        </div>
-                        <div 
-                            v-for="category in categories" 
-                            :key="category"
-                            @click="toggleCategoryFilter(category)"
-                            class="filter-chip px-3 py-1 rounded-full text-sm"
-                            :class="[currentCategory === category ? 'active' : 'bg-gray-100 dark:bg-slate-700']"
-                        >
-                            <i :class="getCategoryIcon(category)" class="mr-1"></i>{{ category }}
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Selected count -->
-                <div class="mb-6 bg-dcgray-light dark:bg-slate-700 rounded-lg p-3 md:p-4 flex items-center justify-between">
-                    <div class="flex items-center">
-                        <span class="h-8 w-8 rounded-full bg-dcblue text-white flex items-center justify-center mr-3">
-                            {{ selectedCatalogs.length }}
-                        </span>
-                        <span class="text-sm md:text-base text-gray-700 dark:text-gray-200">
-                            {{ selectedCatalogs.length === 1 ? 'Catalog' : 'Catalogs' }} selected
-                        </span>
-                    </div>
-                    
-                    <div class="text-xs md:text-sm text-gray-500 dark:text-gray-400">
-                        <i class="fas fa-info-circle mr-1"></i>
-                        <span class="hidden sm:inline">Click on cards to select/deselect</span>
-                        <span class="sm:hidden">Tap to select</span>
-                    </div>
-                </div>
+            </section>
 
-                <!-- Catalog cards -->
-                <div v-for="category in displayedCategories" :key="category" class="mb-8 md:mb-10">
-                    <h3 class="text-lg md:text-xl font-bold text-gray-700 dark:text-gray-200 mb-3 md:mb-4 flex items-center">
-                        <i :class="getCategoryIcon(category)" class="mr-2"></i>
-                        {{ category }}
-                    </h3>
-                    
-                    <div class="catalog-grid">
-                        <div 
-                            v-for="catalog in getCatalogsByCategory(category)" 
-                            :key="catalog.id" 
-                            @click="toggleCatalog(catalog)"
-                            class="catalog-card cursor-pointer bg-white dark:bg-slate-700 rounded-xl overflow-hidden transition-all"
-                            :class="{'selected': selectedCatalogs.includes(catalog.id)}"
-                        >
-                            <div class="catalog-card-inner">
-                                <!-- Card header with icon -->
-                                <div class="bg-gradient-to-r from-dcblue to-dcblue-dark p-3 md:p-4 text-white flex justify-between items-center">
-                                    <div class="text-xl md:text-2xl">
-                                        <i :class="'fas fa-' + getIconForCatalog(catalog)"></i>
-                                    </div>
-                                    <span class="category-badge bg-white/20 backdrop-blur-sm px-2 py-1 rounded-full text-white">
-                                        {{ catalog.category }}
-                                    </span>
-                                </div>
-                                
-                                <!-- Card content -->
-                                <div class="p-4 md:p-5 card-main-content">
-                                    <div class="flex items-center mb-2 md:mb-3">
-                                        <div class="w-6 h-6 mr-3 relative flex items-center justify-center">
-                                            <input 
-                                                type="checkbox" 
-                                                :id="catalog.id" 
-                                                :value="catalog.id" 
-                                                v-model="selectedCatalogs"
-                                                class="w-5 h-5 md:w-5 md:h-5 accent-dcblue"
-                                                @click.stop
-                                            >
-                                        </div>
-                                        <h4 class="font-bold text-gray-800 dark:text-white text-base md:text-base">{{ catalog.name }}</h4>
-                                    </div>
-                                    
-                                    <p class="text-gray-600 dark:text-gray-300 text-xs md:text-sm">{{ catalog.description }}</p>
-                                </div>
-                                
-                                <!-- Card footer -->
-                                <div class="p-3 md:p-4 border-t border-dcgray dark:border-slate-600 flex justify-end bg-gray-50 dark:bg-slate-800">
-                                    <button 
-                                        class="text-xs text-dcblue dark:text-dcblue-light hover:text-dcblue-dark dark:hover:text-white focus:outline-none py-1 px-2"
-                                        @click.stop="toggleCatalog(catalog)"
-                                    >
-                                        {{ selectedCatalogs.includes(catalog.id) ? 'Remove' : 'Add' }}
-                                    </button>
-                                </div>
+            <!-- Filters -->
+            <section class="mb-8 flex justify-center space-x-4">
+                <button 
+                    @click="toggleCategoryFilter('')" 
+                    class="px-4 py-2 rounded-full text-sm font-medium"
+                    :class="currentCategory === '' ? 'bg-marvelred text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'"
+                >
+                    All
+                </button>
+                <button 
+                    v-for="category in categories" 
+                    :key="category" 
+                    @click="toggleCategoryFilter(category)"
+                    class="px-4 py-2 rounded-full text-sm font-medium"
+                    :class="currentCategory === category ? 'bg-marvelred text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'"
+                >
+                    {{ category }}
+                </button>
+            </section>
+
+            <!-- Selected catalogs -->
+            <div class="mb-8 bg-marveldark-light rounded-lg p-4 flex items-center justify-between">
+                <span class="text-lg">
+                    <strong>{{ selectedCatalogs.length }}</strong> {{ selectedCatalogs.length === 1 ? 'Catalog Selected' : 'Catalogs Selected' }}
+                </span>
+                <span class="text-sm text-gray-400">
+                    <i class="fas fa-info-circle mr-1"></i>Click cards to select
+                </span>
+            </div>
+
+            <!-- Catalog cards -->
+            <div class="masonry-grid">
+                <transition-group name="rotate-fade" tag="div" class="masonry-grid">
+                    <div 
+                        v-for="catalog in filteredCatalogs" 
+                        :key="catalog.id" 
+                        @click="toggleCatalog(catalog)"
+                        class="masonry-item catalog-card rounded-lg shadow-marvel-card cursor-pointer min-h-[250px] flex flex-col justify-end"
+                        :class="{'selected': selectedCatalogs.includes(catalog.id)}"
+                        :style="{ backgroundImage: `url(${getCatalogImage(catalog.id)})` }"
+                    >
+                        <div class="card-content p-4">
+                            <div class="flex items-center mb-2">
+                                <i :class="'fas fa-' + getIconForCatalog(catalog)" class="text-3xl text-marvelgold mr-3"></i>
+                                <h3 class="text-lg font-bold">{{ catalog.name }}</h3>
+                            </div>
+                            <p class="text-sm text-gray-300 mb-3">{{ catalog.description }}</p>
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs bg-marveldark px-2 py-1 rounded-full">{{ catalog.category }}</span>
+                                <input 
+                                    type="checkbox" 
+                                    :id="catalog.id" 
+                                    :value="catalog.id" 
+                                    v-model="selectedCatalogs"
+                                    class="h-5 w-5 accent-marvelgold"
+                                    @click.stop
+                                >
                             </div>
                         </div>
                     </div>
-                </div>
+                </transition-group>
             </div>
 
             <!-- Installation panel -->
-            <transition name="slide-fade">
-                <div v-if="showInstallPanel" id="install-panel" class="bg-white dark:bg-slate-800 rounded-xl shadow-dc p-4 md:p-8 mb-6 md:mb-8">
-                    <div class="flex items-center justify-between mb-4 md:mb-6 pb-4 border-b border-dcgray dark:border-slate-700">
-                        <h3 class="text-xl md:text-2xl font-bold text-gray-800 dark:text-white">Installation Link Ready</h3>
-                        <div class="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-full px-3 py-1 text-sm">
-                            <i class="fas fa-check mr-1"></i>Generated
-                        </div>
+            <transition name="fade">
+                <div v-if="showInstallPanel" class="bg-marveldark-light rounded-lg p-6 mt-12 shadow-marvel-glow">
+                    <h3 class="text-2xl font-bold mb-4">Your Marvel Addon Awaits!</h3>
+                    <p class="text-gray-300 mb-6">Launch your custom Marvel Universe addon in Stremio with the link below:</p>
+                    <div class="flex flex-col sm:flex-row gap-4 mb-6">
+                        <a 
+                            :href="stremioUrl" 
+                            class="marvel-button bg-marvelred text-white px-6 py-3 rounded-lg hover:bg-marvelred-dark text-center"
+                        >
+                            <i class="fas fa-play-circle mr-2"></i>Install Now
+                        </a>
+                        <button 
+                            @click="copyToClipboard" 
+                            class="marvel-button bg-gray-700 text-white px-6 py-3 rounded-lg hover:bg-gray-600"
+                        >
+                            <i class="fas" :class="copied ? 'fa-check' : 'fa-copy'" class="mr-2"></i>
+                            {{ copied ? 'Copied!' : 'Copy Link' }}
+                        </button>
                     </div>
-                    
-                    <div class="mb-6">
-                        <p class="text-gray-700 dark:text-gray-300 mb-4 text-sm md:text-base">Your personalized DC Universe addon is ready to install! Click the button below to add it to Stremio:</p>
-                        
-                        <div class="flex flex-col sm:flex-row gap-3 md:gap-4 mb-6 md:mb-8">
-                            <a 
-                                :href="stremioUrl" 
-                                class="dc-button flex-grow bg-dcblue text-white px-4 md:px-6 py-3 rounded-lg hover:bg-dcblue-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-dcblue transition-all text-center"
-                            >
-                                <i class="fas fa-plus-circle mr-2"></i>Install in Stremio
-                            </a>
-                            
-                            <button 
-                                @click="copyToClipboard" 
-                                class="dc-button flex-grow bg-gray-200 dark:bg-slate-700 text-gray-800 dark:text-white px-4 md:px-6 py-3 rounded-lg hover:bg-gray-300 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300 transition-all"
-                                :data-tooltip="copied ? 'Copied!' : 'Copy to clipboard'"
-                                :class="{'tooltip': !copied}"
-                            >
-                                <i class="fas" :class="copied ? 'fa-check' : 'fa-copy'"></i>
-                                <span class="ml-2">{{ copied ? 'Copied!' : 'Copy URL' }}</span>
-                            </button>
-                        </div>
-                        
-                        <div class="bg-gray-100 dark:bg-slate-700 p-3 md:p-4 rounded-lg font-mono text-xs md:text-sm break-all text-left relative">
-                            {{ installUrl }}
-                        </div>
+                    <div class="bg-marveldark p-4 rounded-lg font-mono text-sm break-all">
+                        {{ installUrl }}
                     </div>
-                    
-                    <div class="bg-dcgray-light dark:bg-slate-700 rounded-lg p-3 md:p-4">
-                        <h4 class="font-bold text-gray-700 dark:text-gray-200 mb-2 flex items-center text-sm md:text-base">
-                            <i class="fas fa-list-check mr-2"></i>
-                            Your Selected Catalogs ({{ selectedCatalogs.length }})
-                        </h4>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 mt-3">
-                            <div 
+                    <div class="mt-6">
+                        <h4 class="text-lg font-semibold mb-3">Your Selection ({{ selectedCatalogs.length }})</h4>
+                        <div class="flex flex-wrap gap-3">
+                            <span 
                                 v-for="id in selectedCatalogs" 
                                 :key="id"
-                                class="flex items-center p-2 bg-white dark:bg-slate-800 rounded-lg text-xs md:text-sm"
+                                class="bg-marvelgold text-marveldark px-3 py-1 rounded-full text-sm flex items-center"
                             >
-                                <i class="fas mr-2 text-dcblue dark:text-dcblue-light" :class="'fa-' + getIconForCatalogById(id)"></i>
-                                <span class="text-gray-800 dark:text-gray-200">{{ getCatalogName(id) }}</span>
-                            </div>
+                                <i class="fas mr-2" :class="'fa-' + getIconForCatalogById(id)"></i>
+                                {{ getCatalogName(id) }}
+                            </span>
                         </div>
                     </div>
                 </div>
             </transition>
         </main>
-        
-        <!-- Bottom Generate Link Button Section -->
-        <section v-if="catalogs.length > 0" class="container mx-auto px-4 py-6 md:py-8 text-center">
-            <transition name="fade">
-                <div v-if="promptToRegenerate" class="bg-yellow-100 dark:bg-yellow-900 border-yellow-500 dark:border-yellow-400 text-yellow-700 dark:text-yellow-200 p-3 mb-4 rounded-md text-sm" role="alert">
-                    <p><i class="fas fa-exclamation-triangle mr-2"></i>Your catalog selection has changed. Please click "Generate Link" again to update your installation URL.</p>
-                </div>
-            </transition>
-            <button 
-                @click="generateLink" 
-                class="dc-button bg-dcblue text-white px-6 py-3 rounded-lg hover:bg-dcblue-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-dcblue transition-all text-lg"
-                :disabled="selectedCatalogs.length === 0"
-                :class="{'opacity-50 cursor-not-allowed': selectedCatalogs.length === 0}"
-            >
-                <i class="fas fa-magic mr-2"></i>Generate Installation Link
-            </button>
-        </section>
 
-        <footer class="bg-gray-100 dark:bg-slate-800 py-6 md:py-8 border-t border-dcgray dark:border-slate-700">
-            <div class="container mx-auto px-4">
-                <div class="flex flex-col md:flex-row justify-between items-center">
-                    <div class="flex items-center mb-4 md:mb-0">
-                        <img src="https://github.com/tapframe/addon-dc/blob/main/assets/icon.png?raw=true" alt="DC Universe Logo" class="w-8 md:w-10 h-8 md:h-10 object-contain mr-2 md:mr-3">
-                        <div>
-                            <h3 class="font-bold text-gray-800 dark:text-white text-sm md:text-base">DC Universe Addon</h3>
-                            <p class="text-xs md:text-sm text-gray-600 dark:text-gray-400">Personalized DC content for Stremio</p>
-                        </div>
-                    </div>
-                    
-                    <div class="flex flex-col md:flex-row gap-3 md:gap-4 md:items-center">
-                        <a href="https://github.com/tapframe/addon-dc" target="_blank" class="text-dcblue dark:text-dcblue-light hover:underline flex items-center text-sm">
-                            <i class="fab fa-github mr-2"></i>GitHub Repository
-                        </a>
-                        
-                        <span class="hidden md:inline text-gray-400">|</span>
-                        
-                        <a href="https://github.com/tapframe/addon-dc/issues" target="_blank" class="text-dcblue dark:text-dcblue-light hover:underline flex items-center text-sm">
-                            <i class="fas fa-bug mr-2"></i>Report Issues
-                        </a>
-                    </div>
+        <!-- Footer -->
+        <footer class="bg-marveldark-dark py-8">
+            <div class="container mx-auto px-4 text-center">
+                <div class="flex justify-center items-center mb-4">
+                    <img src="https://raw.githubusercontent.com/joaogonp/addon-marvel/main/assets/icon.png" alt="Marvel Universe Logo" class="w-10 h-10 object-contain mr-3">
+                    <span class="text-lg font-bold">Marvel Universe Addon</span>
                 </div>
-                
-                <div class="mt-4 md:mt-6 pt-4 md:pt-6 border-t border-dcgray dark:border-slate-700 text-center">
-                    <p class="text-xs md:text-sm text-gray-600 dark:text-gray-400">
-                        DC Universe Addon for Stremio &copy; 2024
-                    </p>
+                <p class="text-gray-400 mb-4">Your gateway to the Marvel multiverse on Stremio</p>
+                <div class="flex justify-center space-x-6">
+                    <a href="https://github.com/joaogonp/addon-marvel" target="_blank" class="text-marvelgold hover:text-marvelgold-light">
+                        <i class="fab fa-github text-2xl"></i>
+                    </a>
+                    <a href="https://github.com/joaogonp/addon-marvel/issues" target="_blank" class="text-marvelgold hover:text-marvelgold-light">
+                        <i class="fas fa-bug text-2xl"></i>
+                    </a>
                 </div>
+                <p class="text-sm text-gray-500 mt-4">© 2025 Marvel Universe Addon</p>
             </div>
         </footer>
-        
+
+        <!-- Copy notification -->
         <transition name="fade">
-            <div v-if="showCopiedToast" class="copy-notification">
-                <i class="fas fa-check mr-2"></i>URL copied to clipboard!
+            <div v-if="showCopiedToast" class="notification bg-marvelgold text-marveldark px-4 py-2 rounded-lg shadow-lg">
+                <i class="fas fa-check mr-2"></i>Link copied!
             </div>
         </transition>
     </div>
@@ -651,81 +343,39 @@
             data: {
                 catalogs: [
                     { 
-                        id: 'dc-chronological', 
-                        name: 'Chronological Order', 
+                        id: 'marvel-mcu', 
+                        name: 'MCU Chronological', 
                         category: 'Timeline',
-                        description: 'Browse the DC Universe in chronological story order',
+                        description: 'Dive into the MCU in story-driven order',
                         icon: 'calendar-alt'
                     },
                     { 
-                        id: 'dc-release', 
-                        name: 'Release Order', 
-                        category: 'Timeline',
-                        description: 'Browse content in original release date order',
-                        icon: 'clock'
+                        id: 'xmen', 
+                        name: 'X-Men Saga', 
+                        category: 'Character',
+                        description: 'Every X-Men film and spinoff',
+                        icon: 'mask'
                     },
                     { 
-                        id: 'dc-movies', 
-                        name: 'Movies', 
+                        id: 'movies', 
+                        name: 'Marvel Films', 
                         category: 'Content Type',
-                        description: 'All DC movies across different eras',
+                        description: 'All Marvel cinematic releases',
                         icon: 'film'
                     },
                     { 
-                        id: 'dceu_movies', 
-                        name: 'DCEU Movies', 
-                        category: 'Curated',
-                        description: 'Official DC Extended Universe film collection',
-                        icon: 'film'
-                    },
-                    { 
-                        id: 'dc-series', 
-                        name: 'Series', 
+                        id: 'series', 
+                        name: 'Marvel Shows', 
                         category: 'Content Type',
-                        description: 'All DC television series',
+                        description: 'Binge-worthy Marvel TV series',
                         icon: 'tv'
                     },
                     { 
-                        id: 'dc_modern_series', 
-                        name: 'DC Modern Series', 
-                        category: 'Curated',
-                        description: 'Recent DC live-action series (2010s-Present)',
-                        icon: 'tv'
-                    },
-                    { 
-                        id: 'dc-animations', 
-                        name: 'Animations', 
+                        id: 'animations', 
+                        name: 'Marvel Animations', 
                         category: 'Content Type',
-                        description: 'All DC animated features and series',
+                        description: 'Vibrant Marvel animated stories',
                         icon: 'play-circle'
-                    },
-                    { 
-                        id: 'dc-batman-animations', 
-                        name: 'Batman Animations', 
-                        category: 'Character',
-                        description: 'Batman animated movies and series',
-                        icon: 'mask'
-                    },
-                    { 
-                        id: 'dc-superman-animations', 
-                        name: 'Superman Animations', 
-                        category: 'Character',
-                        description: 'Superman animated movies and series',
-                        icon: 'shield-alt'
-                    },
-                    { 
-                        id: 'dc-batman', 
-                        name: 'Batman Collection', 
-                        category: 'Character',
-                        description: 'All Batman live-action movies',
-                        icon: 'mask'
-                    },
-                    { 
-                        id: 'dc-superman', 
-                        name: 'Superman Collection', 
-                        category: 'Character',
-                        description: 'All Superman live-action movies',
-                        icon: 'shield-alt'
                     }
                 ],
                 selectedCatalogs: [],
@@ -735,39 +385,30 @@
                 currentCategory: '',
                 copied: false,
                 showCopiedToast: false,
-                darkMode: false,
-                promptToRegenerate: false
+                darkMode: true // Default to dark mode for Marvel theme
             },
             computed: {
                 categories() {
                     return [...new Set(this.catalogs.map(c => c.category))];
                 },
-                displayedCategories() {
-                    if (this.currentCategory) {
-                        return [this.currentCategory];
-                    }
-                    return this.categories;
+                filteredCatalogs() {
+                    return this.currentCategory 
+                        ? this.catalogs.filter(c => c.category === this.currentCategory)
+                        : this.catalogs;
                 }
             },
             watch: {
-                selectedCatalogs: function(newSelection, oldSelection) {
-                    if (this.showInstallPanel) {
-                        console.log('[DC Addon Configure] Catalog selection changed while install panel was visible.');
+                selectedCatalogs(newSelection, oldSelection) {
+                    if (this.showInstallPanel && JSON.stringify(newSelection) !== JSON.stringify(oldSelection)) {
                         this.showInstallPanel = false;
-                        this.promptToRegenerate = true;
                     }
                 }
             },
             methods: {
                 toggleDarkMode() {
                     this.darkMode = !this.darkMode;
-                    if (this.darkMode) {
-                        document.documentElement.classList.add('dark');
-                        localStorage.setItem('darkMode', 'enabled');
-                    } else {
-                        document.documentElement.classList.remove('dark');
-                        localStorage.setItem('darkMode', 'disabled');
-                    }
+                    document.documentElement.classList.toggle('dark', this.darkMode);
+                    localStorage.setItem('darkMode', this.darkMode ? 'enabled' : 'disabled');
                 },
                 selectAll() {
                     this.selectedCatalogs = this.catalogs.map(c => c.id);
@@ -784,20 +425,17 @@
                     }
                 },
                 generateLink() {
-                    this.promptToRegenerate = false;
                     if (this.selectedCatalogs.length === 0) {
-                        alert('Please select at least one catalog');
+                        alert('Select at least one catalog to proceed.');
                         return;
                     }
-                    
+
                     const host = window.location.host;
                     const protocol = window.location.protocol;
-
-                    // Determine if all catalogs are selected
                     const allCatalogIds = this.catalogs.map(c => c.id);
                     const sortedSelected = [...this.selectedCatalogs].sort();
                     const sortedAll = [...allCatalogIds].sort();
-                    const allSelected = sortedSelected.length === sortedAll.length && sortedSelected.every((val, index) => val === sortedAll[index]);
+                    const allSelected = sortedSelected.length === sortedAll.length && sortedSelected.every((val, idx) => val === sortedAll[idx]);
 
                     if (allSelected) {
                         this.installUrl = `${protocol}//${host}/manifest.json`;
@@ -807,25 +445,18 @@
                         this.installUrl = `${protocol}//${host}/catalog/${encodeURIComponent(catalogParam)}/manifest.json`;
                         this.stremioUrl = `stremio://${host}/catalog/${encodeURIComponent(catalogParam)}/manifest.json`;
                     }
-                    
-                    // First set the panel visibility
-                    const wasAlreadyVisible = this.showInstallPanel;
+
                     this.showInstallPanel = true;
-                    
-                    // Smooth scroll to installation panel with a small delay to ensure DOM updates
                     setTimeout(() => {
-                        const installPanel = document.querySelector('#install-panel');
-                        if (installPanel) {
-                            installPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        const panel = document.querySelector('.bg-marveldark-light');
+                        if (panel) {
+                            panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
                         }
-                    }, wasAlreadyVisible ? 10 : 100); // Use shorter delay if panel was already visible
+                    }, 100);
                 },
                 getCatalogName(id) {
                     const catalog = this.catalogs.find(c => c.id === id);
                     return catalog ? catalog.name : id;
-                },
-                getCatalogsByCategory(category) {
-                    return this.catalogs.filter(c => c.category === category);
                 },
                 toggleCategoryFilter(category) {
                     this.currentCategory = this.currentCategory === category ? '' : category;
@@ -834,10 +465,8 @@
                     const iconMap = {
                         'Timeline': 'fas fa-clock',
                         'Content Type': 'fas fa-film',
-                        'Character': 'fas fa-mask',
-                        'Curated': 'fas fa-star'
+                        'Character': 'fas fa-mask'
                     };
-                    
                     return iconMap[category] || 'fas fa-folder';
                 },
                 getIconForCatalog(catalog) {
@@ -847,20 +476,25 @@
                     const catalog = this.catalogs.find(c => c.id === id);
                     return catalog ? (catalog.icon || 'folder') : 'folder';
                 },
+                getCatalogImage(id) {
+                    // Placeholder images (replace with real assets if available)
+                    const imageMap = {
+                        'marvel-mcu': 'https://images.unsplash.com/photo-1621849400072-3f4d1eb38892?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+                        'xmen': 'https://images.unsplash.com/photo-1621849400072-3f4d1eb38892?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+                        'movies': 'https://images.unsplash.com/photo-1621849400072-3f4d1eb38892?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+                        'series': 'https://images.unsplash.com/photo-1621849400072-3f4d1eb38892?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+                        'animations': 'https://images.unsplash.com/photo-1621849400072-3f4d1eb38892?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
+                    };
+                    return imageMap[id] || 'https://images.unsplash.com/photo-1621849400072-3f4d1eb38892?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
+                },
                 copyToClipboard() {
                     navigator.clipboard.writeText(this.installUrl).then(() => {
                         this.copied = true;
                         this.showCopiedToast = true;
-                        
-                        setTimeout(() => {
-                            this.showCopiedToast = false;
-                        }, 2000);
-                        
-                        setTimeout(() => {
-                            this.copied = false;
-                        }, 3000);
+                        setTimeout(() => this.showCopiedToast = false, 2000);
+                        setTimeout(() => this.copied = false, 3000);
                     }).catch(err => {
-                        console.error('Failed to copy text: ', err);
+                        console.error('Failed to copy:', err);
                     });
                 },
                 checkDarkModePreference() {
@@ -872,53 +506,21 @@
                 }
             },
             created() {
-                console.log('[DC Addon Configure] created() hook started.');
                 let initialSelectedIds = [];
                 const path = window.location.pathname;
-                console.log('[DC Addon Configure] pathname:', path);
                 const parts = path.split('/');
-                console.log('[DC Addon Configure] path parts:', parts);
 
-                // Ensure this.catalogs is available and has content
-                const allAvailableCatalogIds = this.catalogs && this.catalogs.length > 0 ? this.catalogs.map(c => c.id) : [];
-                console.log('[DC Addon Configure] All available catalog IDs from this.catalogs:', allAvailableCatalogIds);
-
+                const allAvailableCatalogIds = this.catalogs.map(c => c.id);
                 if (parts.length === 4 && parts[1].toLowerCase() === 'catalog' && parts[3].toLowerCase() === 'configure') {
-                    console.log('[DC Addon Configure] Path matches /catalog/:ids/configure pattern.');
                     const encodedIdsString = parts[2];
-                    console.log('[DC Addon Configure] Extracted encodedIdsString from URL parts[2]:', encodedIdsString);
                     if (encodedIdsString) {
                         const idsString = decodeURIComponent(encodedIdsString);
-                        console.log('[DC Addon Configure] Decoded idsString:', idsString);
-                        const potentialIds = idsString.split(',').map(id => id.trim()).filter(id => id); // trim and remove empty strings
-                        console.log('[DC Addon Configure] Potential IDs from decoded idsString:', potentialIds);
-                        
-                        if (allAvailableCatalogIds.length > 0) {
-                            initialSelectedIds = potentialIds.filter(id => allAvailableCatalogIds.includes(id));
-                            console.log('[DC Addon Configure] Filtered initialSelectedIds (valid & found): ', initialSelectedIds);
-                        } else {
-                            console.warn('[DC Addon Configure] this.catalogs seems empty or not yet populated for filtering.');
-                        }
-                    } else {
-                        console.log('[DC Addon Configure] idsString from URL is empty.');
+                        const potentialIds = idsString.split(',').map(id => id.trim()).filter(id => id);
+                        initialSelectedIds = potentialIds.filter(id => allAvailableCatalogIds.includes(id));
                     }
-                } else {
-                    console.log('[DC Addon Configure] Path does NOT match /catalog/:ids/configure pattern.');
                 }
 
-                if (initialSelectedIds.length > 0) {
-                    console.log('[DC Addon Configure] Setting selectedCatalogs from URL IDs:', initialSelectedIds);
-                    this.selectedCatalogs = initialSelectedIds;
-                } else {
-                    console.log('[DC Addon Configure] No valid IDs from URL or pattern mismatch. Defaulting to select all.');
-                    if (allAvailableCatalogIds.length > 0) {
-                        this.selectedCatalogs = [...allAvailableCatalogIds]; // Select all
-                    } else {
-                        console.warn('[DC Addon Configure] Cannot select all because allAvailableCatalogIds is empty. selectedCatalogs will be empty.');
-                        this.selectedCatalogs = [];
-                    }
-                }
-                console.log('[DC Addon Configure] Final selectedCatalogs:', JSON.parse(JSON.stringify(this.selectedCatalogs)));
+                this.selectedCatalogs = initialSelectedIds.length > 0 ? initialSelectedIds : allAvailableCatalogIds;
             },
             mounted() {
                 this.checkDarkModePreference();
