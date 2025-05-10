@@ -78,7 +78,7 @@
                 <input type="text" id="rpdbKey" class="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-blue-500" placeholder="Enter your RPDB API Key for ratings and posters">
                 <button id="validateRpdbKey" class="validate-button" disabled>Validate</button>
             </div>
-            <p class="text-sm text-gray-400 mt-2">Enter a Rating Poster DB API key to enable ratings (any tier) or custom posters (Tier 1 only). Leave blank to use default posters. Get a key at <a href="https://ratingposterdb.com" target="_blank" class="text-blue-500 hover:underline">ratingposterdb.com</a>. If validation fails, check your key and try again.</p>
+            <p class="text-sm text-gray-400 mt-2">Enter a Rating Poster DB API key to enable ratings (any tier) or custom posters (Tier 1 only). Copy the key exactly from <a href="https://ratingposterdb.com" target="_blank" class="text-blue-500 hover:underline">ratingposterdb.com</a>. If validation fails, ensure no extra spaces and check key status.</p>
             <p id="rpdbValidationMessage" class="text-sm mt-2"></p>
         </div>
 
@@ -119,13 +119,13 @@
                     return true;
                 } else {
                     const errorMessage = result.error || 'Invalid RPDB API Key.';
-                    validationMessage.textContent = `${errorMessage} Please check your key at ratingposterdb.com or try a new key.`;
+                    validationMessage.textContent = `${errorMessage} Copy the key exactly from ratingposterdb.com, without spaces, or generate a new key.`;
                     validationMessage.className = 'text-sm text-red-500 mt-2';
                     return false;
                 }
             } catch (error) {
                 console.error('Error validating RPDB key:', error);
-                validationMessage.textContent = 'Error validating key. Please check your network or try again later.';
+                validationMessage.textContent = 'Error validating key. Check your network or try again later.';
                 validationMessage.className = 'text-sm text-red-500 mt-2';
                 return false;
             }
