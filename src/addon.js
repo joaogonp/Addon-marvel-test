@@ -59,6 +59,14 @@ app.get('/catalog/:ids/configure', (req, res) => {
 // Cache para catálogos
 let cachedCatalog = {};
 
+// Função auxiliar para extrair RPDB_API_KEY de catalogsParam
+function extractRpdbKey(catalogsParam) {
+    if (!catalogsParam) return null;
+    const params = decodeURIComponent(catalogsParam).split(',');
+    const rpdbParam = params.find(param => param.startsWith('rpdb_'));
+    return rpdbParam ? rpdbParam.replace('rpdb_', '') : null;
+}
+
 // Função auxiliar para buscar detalhes do TMDb
 async function getTmdbDetails(id, type) {
     const url = `https://api.themoviedb.org/3/${type}/${id}?api_key=${tmdbKey}&language=en-US&append_to_response=external_ids`;
@@ -72,8 +80,7 @@ async function getTmdbDetails(id, type) {
 }
 
 // Função para buscar ratings do RPDB (opcional)
-async function getRpdbRatings(imdbId, tmdbId, type) {
-    const rpdbKey = process.env.RPDB_API_KEY;
+async function getRpdbRatings(imdbId, tmdbId, type, rpdbKey) {
     if (!rpdbKey) {
         return {};
     }
@@ -96,7 +103,7 @@ async function getRpdbRatings(imdbId, tmdbId, type) {
 }
 
 // Função para buscar dados adicionais (TMDb, OMDb, RPDB opcional)
-async function fetchAdditionalData(item) {
+async function fetchAdditionalData(item, rpdbKey) {
     console.log('\n--- Fetching details for item: ---', item);
 
     // Validação básica do item
@@ -170,7 +177,9 @@ async function fetchAdditionalData(item) {
             }
         });
 
-        const rpdbPromise = process.env.RPDB_API_KEY ? getRpdbRatings(lookupId, effectiveTmdbId, item.type) : Promise.resolve({});
+        const rpdbPromise = rpdbKey || process.env.RPDB_API_KEY
+            ? getRpdbRatings(lookupId, effectiveTmdbId, item.type, rpdbKey || process.env.RPDB_API_KEY)
+            : Promise.resolve({});
 
         console.log(`Fetching data for ${item.title} (${lookupId})...`);
         const [omdbRes, tmdbDetailsResult, tmdbImagesRes, rpdbRes] = await Promise.all([
@@ -354,7 +363,7 @@ app.get('/manifest.json', (req, res) => {
         types: ["movie", "series"],
         idPrefixes: ["marvel_"],
         behaviorHints: {
-            configurable: false
+            configurable: true
         },
         contactEmail: "jpnapsp@gmail.com",
         stremioAddonsConfig: {
@@ -369,7 +378,7 @@ app.get('/manifest.json', (req, res) => {
 // Manifest personalizado
 app.get('/catalog/:catalogsParam/manifest.json', (req, res) => {
     const catalogsParam = req.params.catalogsParam;
-    const selectedCatalogIds = catalogsParam ? decodeURIComponent(catalogsParam).split(',') : [];
+    const selectedCatalogIds = catalogsParam ? decodeURIComponent(catalogsParam).split(',').filter(id => !id.startsWith('rpdb_')) : [];
     console.log(`Custom catalog manifest requested - Selected catalogs: ${selectedCatalogIds.join(', ')}`);
     
     const allCatalogs = getAllCatalogs();
@@ -391,7 +400,7 @@ app.get('/catalog/:catalogsParam/manifest.json', (req, res) => {
         types: ["movie", "series"],
         idPrefixes: ["marvel_"],
         behaviorHints: {
-            configurable: false
+            configurable: true
         },
         contactEmail: "jpnapsp@gmail.com",
         stremioAddonsConfig: {
@@ -516,7 +525,7 @@ app.get('/catalog/:type/:id.json', async (req, res) => {
     
     console.log(`⏳ Generating catalog for ${dataSourceName}...`);
     const metas = await Promise.all(
-        dataSource.map(item => fetchAdditionalData(item))
+        dataSource.map(item => fetchAdditionalData(item, null))
     );
     
     const validMetas = metas.filter(item => item !== null);
@@ -532,6 +541,11 @@ app.get('/catalog/:catalogsParam/catalog/:type/:id.json', async (req, res) => {
     const genre = req.query.genre;
     console.log(`Custom catalog requested - Catalogs: ${catalogsParam}, Type: ${type}, ID: ${id}, Genre: ${genre || 'default'}`);
     
+    const rpdbKey = extractRpdbKey(catalogsParam);
+    if (rpdbKey) {
+        console.log(`RPDB API Key detected in catalogsParam: ${rpdbKey.substring(0, 4)}...`);
+    }
+
     const cacheKey = `custom-${id}-${catalogsParam}${genre ? `_${genre}` : ''}`;
     if (cachedCatalog[cacheKey]) {
         console.log(`✅ Returning cached catalog for ID: ${cacheKey}`);
@@ -593,7 +607,7 @@ app.get('/catalog/:catalogsParam/catalog/:type/:id.json', async (req, res) => {
     
     console.log(`⏳ Generating catalog for ${dataSourceName}...`);
     const metas = await Promise.all(
-        dataSource.map(item => fetchAdditionalData(item))
+        dataSource.map(item => fetchAdditionalData(item, rpdbKey))
     );
     
     const validMetas = metas.filter(item => item !== null);
