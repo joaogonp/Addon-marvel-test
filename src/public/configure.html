@@ -1,4 +1,4 @@
-<!DOCTYPE html>tens
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -75,10 +75,10 @@
         <div class="mt-8">
             <label for="rpdbKey" class="block text-lg font-medium mb-2">RPDB API Key (Optional)</label>
             <div class="flex items-center">
-                <input type="text" id="rpdbKey" class="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-blue-500" placeholder="Enter your RPDB API Key for additional ratings and posters">
+                <input type="text" id="rpdbKey" class="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-blue-500" placeholder="Enter your RPDB API Key for ratings and posters">
                 <button id="validateRpdbKey" class="validate-button" disabled>Validate</button>
             </div>
-            <p class="text-sm text-gray-400 mt-2">Enter a Rating Poster DB API key (Tier 1 recommended) to include ratings and custom posters. Leave blank to use TMDb/OMDb only. Get a key at <a href="https://ratingposterdb.com" target="_blank" class="text-blue-500 hover:underline">ratingposterdb.com</a>.</p>
+            <p class="text-sm text-gray-400 mt-2">Enter a Rating Poster DB API key to enable ratings (any tier) or custom posters (Tier 1 only). Leave blank to use default posters. Get a key at <a href="https://ratingposterdb.com" target="_blank" class="text-blue-500 hover:underline">ratingposterdb.com</a>. If validation fails, check your key and try again.</p>
             <p id="rpdbValidationMessage" class="text-sm mt-2"></p>
         </div>
 
@@ -114,18 +114,18 @@
                 console.log('RPDB validation response:', result);
 
                 if (response.ok && result.valid) {
-                    validationMessage.textContent = 'Valid RPDB API Key! Custom posters and ratings enabled.';
+                    validationMessage.textContent = 'Valid RPDB API Key! Ratings enabled; Tier 1 keys also enable custom posters.';
                     validationMessage.className = 'text-sm text-green-500 mt-2';
                     return true;
                 } else {
                     const errorMessage = result.error || 'Invalid RPDB API Key.';
-                    validationMessage.textContent = `${errorMessage} Please check your key or get a Tier 1 key at ratingposterdb.com.`;
+                    validationMessage.textContent = `${errorMessage} Please check your key at ratingposterdb.com or try a new key.`;
                     validationMessage.className = 'text-sm text-red-500 mt-2';
                     return false;
                 }
             } catch (error) {
                 console.error('Error validating RPDB key:', error);
-                validationMessage.textContent = 'Error validating key. Please try again later.';
+                validationMessage.textContent = 'Error validating key. Please check your network or try again later.';
                 validationMessage.className = 'text-sm text-red-500 mt-2';
                 return false;
             }
