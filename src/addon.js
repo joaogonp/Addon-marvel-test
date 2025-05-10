@@ -221,27 +221,88 @@ function getAllCatalogs() {
         {
             type: "Marvel",
             id: "marvel-mcu",
-            name: "MCU Chronological Order"
+            name: "MCU Chronologically Order",
+            extra: [
+                {
+                    name: "genre",
+                    options: ["new", "old"],
+                    isRequired: false,
+                    default: null,
+                    optionLabels: {
+                        new: " новым к старым",
+                        old: "Old to New"
+                    }
+                }
+            ],
+            behaviorHints: {
+                orderHint: 1
+            }
         },
         {
             type: "Marvel",
             id: "xmen",
-            name: "X-Men Collection"
+            name: "X-Men",
+            behaviorHints: {
+                orderHint: 2
+            }
         },
         {
             type: "Marvel",
             id: "movies",
-            name: "Movies"
+            name: "Movies",
+            extra: [
+                {
+                    name: "genre",
+                    options: ["new"],
+                    isRequired: false,
+                    default: null,
+                    optionLabels: {
+                        new: "New to Old"
+                    }
+                }
+            ],
+            behaviorHints: {
+                orderHint: 3
+            }
         },
         {
             type: "Marvel",
             id: "series",
-            name: "Series"
+            name: "Series",
+            extra: [
+                {
+                    name: "genre",
+                    options: ["new"],
+                    isRequired: false,
+                    default: null,
+                    optionLabels: {
+                        new: "New to Old"
+                    }
+                }
+            ],
+            behaviorHints: {
+                orderHint: 4
+            }
         },
         {
             type: "Marvel",
             id: "animations",
-            name: "Animations"
+            name: "Animations",
+            extra: [
+                {
+                    name: "genre",
+                    options: ["new", "old"],
+                    isRequired: false,
+                    default: "old",
+                    optionLabels: {
+                        new: "New to Old",
+                        old: "Old to New"
+                    }
+                }
+            ],
+            behaviorHints: {
+                orderHint: 5
+            }
         }
     ];
 }
@@ -251,20 +312,24 @@ app.get('/manifest.json', (req, res) => {
     console.log('Default manifest requested');
     
     const manifest = {
-        id: "com.tapframe.marveladdon",
-        name: "Marvel Universe",
-        description: "Explore the Marvel Universe with MCU, X-Men, movies, series, and animations!",
-        version: "1.0.1",
-        logo: "https://github.com/tapframe/addon-marvel/blob/main/assets/icon.png?raw=true",
-        background: "https://github.com/tapframe/addon-marvel/blob/main/assets/background.jpg?raw=true",
+        id: "com.joaogonp.marveladdon",
+        name: "Marvel Teste",
+        description: "Watch the entire Marvel catalog! MCU and X-Men (chronologically organized), Movies, Series, and Animations!",
+        version: "1.1.0",
+        logo: "https://raw.githubusercontent.com/joaogonp/addon-marvel/main/assets/icon.png",
+        background: "https://raw.githubusercontent.com/joaogonp/addon-marvel/main/assets/background.jpg",
         catalogs: getAllCatalogs(),
         resources: ["catalog"],
         types: ["movie", "series"],
         idPrefixes: ["marvel_"],
         behaviorHints: {
-            configurable: true
+            configurable: false
         },
-        contactEmail: "your-email@example.com"
+        contactEmail: "jpnapsp@gmail.com",
+        stremioAddonsConfig: {
+            issuer: "https://stremio-addons.net",
+            signature: "eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0..zTaTTCcviqQPiIvU4QDfCQ.wSlk8AoM4p2nvlvoQJEoLRRx5_Msnu37O9bAsgwhJTZYu4uXd7Cve9GaVXdnwZ4nAeNSsRSgp51mofhf0EVQYwx7jGxh4FEvs8MMuWeHQ9alNsqVuy3-Mc459B9myIT-.R_1iaQbNExj4loQJlyWYtA"
+        }
     };
     
     res.json(manifest);
@@ -284,20 +349,24 @@ app.get('/catalog/:catalogsParam/manifest.json', (req, res) => {
     }
     
     const manifest = {
-        id: "com.tapframe.marveladdon.custom",
-        name: "Marvel Universe Custom",
-        description: "Your personalized Marvel Universe collection",
-        version: "1.0.1",
-        logo: "https://github.com/tapframe/addon-marvel/blob/main/assets/icon.png?raw=true",
-        background: "https://github.com/tapframe/addon-marvel/blob/main/assets/background.jpg?raw=true",
+        id: "com.joaogonp.marveladdon.custom",
+        name: "Marvel Teste Custom",
+        description: "Your personalized Marvel catalog! MCU and X-Men (chronologically organized), Movies, Series, and Animations!",
+        version: "1.1.0",
+        logo: "https://raw.githubusercontent.com/joaogonp/addon-marvel/main/assets/icon.png",
+        background: "https://raw.githubusercontent.com/joaogonp/addon-marvel/main/assets/background.jpg",
         catalogs: filteredCatalogs,
         resources: ["catalog"],
         types: ["movie", "series"],
         idPrefixes: ["marvel_"],
         behaviorHints: {
-            configurable: true
+            configurable: false
         },
-        contactEmail: "your-email@example.com"
+        contactEmail: "jpnapsp@gmail.com",
+        stremioAddonsConfig: {
+            issuer: "https://stremio-addons.net",
+            signature: "eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0..zTaTTCcviqQPiIvU4QDfCQ.wSlk8AoM4p2nvlvoQJEoLRRx5_Msnu37O9bAsgwhJTZYu4uXd7Cve9GaVXdnwZ4nAeNSsRSgp51mofhf0EVQYwx7jGxh4FEvs8MMuWeHQ9alNsqVuy3-Mc459B9myIT-.R_1iaQbNExj4loQJlyWYtA"
+        }
     };
     
     res.json(manifest);
@@ -310,14 +379,14 @@ app.get('/api/catalogs', (req, res) => {
     const catalogInfo = [
         { 
             id: 'marvel-mcu', 
-            name: 'MCU Chronological Order', 
+            name: 'MCU Chronologically Order', 
             category: 'Timeline',
             description: 'Browse the Marvel Cinematic Universe in chronological story order',
             icon: 'calendar-alt'
         },
         { 
             id: 'xmen', 
-            name: 'X-Men Collection', 
+            name: 'X-Men', 
             category: 'Character',
             description: 'All X-Men movies and related content',
             icon: 'mask'
@@ -367,14 +436,14 @@ app.get('/catalog/:type/:id.json', async (req, res) => {
         switch (id) {
             case 'marvel-mcu':
                 dataSource = chronologicalData;
-                dataSourceName = 'MCU Chronological Order';
+                dataSourceName = 'MCU Chronologically Order';
                 break;
             case 'xmen':
                 dataSource = xmenData;
-                dataSourceName = 'X-Men Collection';
+                dataSourceName = 'X-Men';
                 break;
             case 'movies':
-                dataSource = moviesData;
+               五、データソース = moviesData;
                 dataSourceName = 'Movies';
                 break;
             case 'series':
@@ -402,6 +471,10 @@ app.get('/catalog/:type/:id.json', async (req, res) => {
         } else if (genre === 'new') {
             dataSource = sortByReleaseDate([...dataSource], 'desc');
             console.log(`${dataSourceName} - Applying sort: desc (new to old)`);
+        } else if (id === 'animations' && !genre) {
+            // Para 'animations', default é 'old' conforme o manifest
+            dataSource = sortByReleaseDate([...dataSource], 'asc');
+            console.log(`${dataSourceName} - Applying default sort: asc (old to new)`);
         } else {
             console.log(`${dataSourceName} - Using default order from data`);
         }
@@ -441,11 +514,11 @@ app.get('/catalog/:catalogsParam/catalog/:type/:id.json', async (req, res) => {
         switch (id) {
             case 'marvel-mcu':
                 dataSource = chronologicalData;
-                dataSourceName = 'MCU Chronological Order';
+                dataSourceName = 'MCU Chronologically Order';
                 break;
             case 'xmen':
                 dataSource = xmenData;
-                dataSourceName = 'X-Men Collection';
+                dataSourceName = 'X-Men';
                 break;
             case 'movies':
                 dataSource = moviesData;
@@ -475,6 +548,10 @@ app.get('/catalog/:catalogsParam/catalog/:type/:id.json', async (req, res) => {
         } else if (genre === 'new') {
             dataSource = sortByReleaseDate([...dataSource], 'desc');
             console.log(`${dataSourceName} - Applying sort: desc (new to old)`);
+        } else if (id === 'animations' && !genre) {
+            // Para 'animations', default é 'old' conforme o manifest
+            dataSource = sortByReleaseDate([...dataSource], 'asc');
+            console.log(`${dataSourceName} - Applying default sort: asc (old to new)`);
         } else {
             console.log(`${dataSourceName} - Using default order from data`);
         }
@@ -502,7 +579,7 @@ app.get('/', (req, res) => {
 
 // Iniciar servidor
 app.listen(port, () => {
-    console.log(`Marvel Universe Addon server running at http://localhost:${port}/`);
+    console.log(`Marvel Teste Addon server running at http://localhost:${port}/`);
     console.log(`Configuration page: http://localhost:${port}/configure`);
     console.log(`To install with custom catalogs: http://localhost:${port}/catalog/CATALOG_IDS/manifest.json`);
 });
