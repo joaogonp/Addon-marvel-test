@@ -2,585 +2,142 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Marvel Universe - Assemble Your Saga</title>
-    <!-- Vue.js -->
-    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
-    <!-- Tailwind CSS -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marvel Addon Configurator</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        marvelred: {
-                            light: '#ff3333',
-                            DEFAULT: '#e50914',
-                            dark: '#b20710',
-                        },
-                        marvelgold: {
-                            light: '#fadb14',
-                            DEFAULT: '#f5c518',
-                            dark: '#ca9e10',
-                        },
-                        marvelblue: {
-                            light: '#3b82f6',
-                            DEFAULT: '#1e3a8a',
-                            dark: '#172554',
-                        },
-                        marveldark: {
-                            light: '#1a1a1a',
-                            DEFAULT: '#050505',
-                            dark: '#000000',
-                        }
-                    },
-                    boxShadow: {
-                        'cosmic': '0 0 12px rgba(229, 9, 20, 0.5), 0 0 24px rgba(229, 9, 20, 0.3)',
-                        'card-float': '0 8px 24px rgba(0, 0, 0, 0.6)',
-                        'mcu-glow': '0 0 20px rgba(229, 9, 20, 0.7), 0 0 30px rgba(229, 9, 20, 0.4)',
-                    },
-                    keyframes: {
-                        scaleGlow: {
-                            '0%, 100%': { transform: 'scale(1)', boxShadow: '0 0 10px rgba(229, 9, 20, 0.4)' },
-                            '50%': { transform: 'scale(1.02)', boxShadow: '0 0 20px rgba(229, 9, 20, 0.8)' },
-                        },
-                        floatIn: {
-                            '0%': { opacity: 0, transform: 'translateY(30px) scale(0.95)' },
-                            '100%': { opacity: 1, transform: 'translateY(0) scale(1)' },
-                        }
-                    },
-                    animation: {
-                        'scale-glow': 'scaleGlow 2s ease-in-out infinite',
-                        'float-in': 'floatIn 0.6s ease-out',
-                    }
-                }
-            }
-        }
-    </script>
     <style>
-        [v-cloak] { display: none; }
-
-        /* Float-in animation */
-        .float-in-enter-active {
-            animation: float-in 0.6s ease-out;
+        body {
+            background-color: #1a202c;
+            color: #e2e8f0;
+            font-family: 'Arial', sans-serif;
         }
-        .float-in-leave-active {
-            transition: opacity 0.3s, transform 0.3s;
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
         }
-        .float-in-enter, .float-in-leave-to {
-            opacity: 0;
-            transform: translateY(30px) scale(0.95);
-        }
-
-        /* Fade for notifications */
-        .fade-enter-active, .fade-leave-active {
-            transition: opacity 0.5s;
-        }
-        .fade-enter, .fade-leave-to {
-            opacity: 0;
-        }
-
-        /* Card styles */
         .catalog-card {
-            background-size: cover;
-            background-position: center;
-            transition: transform 0.4s ease, box-shadow 0.4s ease;
-            position: relative;
-            overflow: hidden;
-            border-radius: 16px;
+            background-color: #2d3748;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
         }
-        .catalog-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(to bottom, rgba(5, 5, 5, 0.2), rgba(5, 5, 5, 0.85));
-            z-index: 0;
+        .catalog-card img {
+            max-width: 100%;
+            border-radius: 8px;
         }
-        .catalog-card:hover {
-            transform: translateY(-8px) scale(1.03);
-            box-shadow: 0 0 24px rgba(229, 9, 20, 0.6);
+        .catalog-checkbox {
+            margin-right: 8px;
         }
-        .catalog-card.selected {
-            border: 3px solid #f5c518;
-            box-shadow: 0 0 20px rgba(245, 197, 24, 0.6);
+        .generated-link {
+            background-color: #4a5568;
+            padding: 16px;
+            border-radius: 8px;
+            word-break: break-all;
         }
-        .catalog-card.mcu-card {
-            box-shadow: 0 0 20px rgba(229, 9, 20, 0.5);
+        .copy-button {
+            background-color: #3182ce;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            margin-top: 8px;
+            cursor: pointer;
         }
-        .catalog-card.mcu-card.selected {
-            box-shadow: 0 0 30px rgba(245, 197, 24, 0.7);
-        }
-        .card-content {
-            position: relative;
-            z-index: 1;
-        }
-
-        /* Button styles */
-        .marvel-button {
-            position: relative;
-            overflow: hidden;
-            transition: all 0.4s ease;
-            border: 1px solid transparent;
-        }
-        .marvel-button:hover {
-            border-color: #f5c518;
-            box-shadow: 0 0 15px rgba(229, 9, 20, 0.5);
-        }
-
-        /* Hero section */
-        .hero {
-            background: linear-gradient(135deg, #050505 0%, #1e3a8a 50%, #e50914 100%);
-            position: relative;
-            overflow: hidden;
-        }
-        .hero::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: url('https://raw.githubusercontent.com/joaogonp/addon-marvel/main/assets/background.jpg') center/cover;
-            opacity: 0.15;
-            z-index: 0;
-        }
-        .hero-content {
-            position: relative;
-            z-index: 1;
-        }
-
-        /* Particle effect */
-        .particles {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            pointer-events: none;
-            z-index: 0;
-            overflow: hidden;
-        }
-        .particle {
-            position: absolute;
-            width: 2px;
-            height: 2px;
-            background: #f5c518;
-            border-radius: 50%;
-            opacity: 0.5;
-            animation: floatParticle 10s linear infinite;
-        }
-        @keyframes floatParticle {
-            0% { transform: translateY(0); opacity: 0.5; }
-            100% { transform: translateY(-100vh); opacity: 0; }
-        }
-
-        /* Notification styles */
-        .notification {
-            position: fixed;
-            top: 1.5rem;
-            right: 1.5rem;
-            z-index: 1000;
-        }
-
-        /* Responsive adjustments */
-        @media (max-width: 640px) {
-            .top-catalogs {
-                flex-direction: column;
-            }
-            .bottom-catalogs {
-                flex-direction: column;
-            }
-            .catalog-card {
-                min-height: 240px !important;
-            }
-            .hero-title {
-                font-size: 2rem !important;
-            }
-            .marvel-button {
-                padding: 0.75rem 1.5rem;
-                font-size: 0.9rem;
-            }
-        }
-        @media (min-width: 641px) and (max-width: 1023px) {
-            .bottom-catalogs {
-                flex-wrap: wrap;
-                justify-content: center;
-            }
-            .bottom-catalogs .catalog-card {
-                flex: 1 1 45%;
-            }
+        .copy-button:hover {
+            background-color: #2b6cb0;
         }
     </style>
 </head>
-<body class="bg-marveldark text-white">
-    <div id="app" v-cloak>
-        <!-- Hero section -->
-        <section class="hero py-20 md:py-32 relative">
-            <div class="particles">
-                <div v-for="n in 20" :key="n" class="particle" :style="{ 
-                    left: Math.random() * 100 + '%', 
-                    animationDelay: Math.random() * 5 + 's',
-                    animationDuration: 5 + Math.random() * 5 + 's'
-                }"></div>
-            </div>
-            <div class="hero-content container mx-auto px-4 text-center">
-                <img src="https://raw.githubusercontent.com/joaogonp/Addon-marvel-test/refs/heads/main/assets/webicon.png" alt="Marvel Universe Logo" class="w-24 h-24 mx-auto mb-8 animate-scale-glow">
-                <h1 class="hero-title text-5xl md:text-6xl font-extrabold mb-6">Assemble Your Marvel Saga</h1>
-                <p class="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto mb-10">
-                    Craft your ultimate Stremio addon with iconic Marvel catalogs.
-                </p>
-                <button 
-                    @click="generateLink" 
-                    class="marvel-button bg-marvelred text-white px-8 py-4 rounded-lg text-lg font-semibold animate-scale-glow disabled:opacity-50 disabled:cursor-not-allowed"
-                    :disabled="selectedCatalogs.length === 0"
-                >
-                    <i class="fas fa-bolt mr-2"></i>Create Your Addon
-                </button>
-            </div>
-        </section>
+<body>
+    <div class="container">
+        <h1 class="text-3xl font-bold mb-6 text-center">Marvel Addon Configurator</h1>
+        <p class="text-center mb-8">Select the catalogs you want to include in your Marvel Addon.</p>
+        
+        <div id="catalogs" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Catalog cards will be populated by JavaScript -->
+        </div>
 
-        <!-- Main content -->
-        <main class="container mx-auto px-4 py-16 relative">
-            <!-- Controls -->
-            <section class="mb-12 flex flex-col sm:flex-row justify-between items-center">
-                <div class="mb-6 sm:mb-0">
-                    <span class="text-lg font-semibold">
-                        <span class="text-marvelgold">{{ selectedCatalogs.length }}</span> {{ selectedCatalogs.length === 1 ? 'Catalog Selected' : 'Catalogs Selected' }}
-                    </span>
-                </div>
-                <div class="flex space-x-4">
-                    <button 
-                        @click="selectAll" 
-                        class="marvel-button bg-marvelblue text-white px-4 py-2 rounded-lg hover:bg-marvelblue-dark"
-                    >
-                        <i class="fas fa-check-circle mr-2"></i>Select All
-                    </button>
-                    <button 
-                        @click="deselectAll" 
-                        class="marvel-button bg-marveldark-light text-white px-4 py-2 rounded-lg hover:bg-marveldark"
-                    >
-                        <i class="fas fa-times-circle mr-2"></i>Clear
-                    </button>
-                    <button @click="toggleDarkMode" class="marvel-button bg-marveldark-light text-white px-4 py-2 rounded-lg hover:bg-marveldark">
-                        <i class="fas" :class="darkMode ? 'fa-sun' : 'fa-moon'"></i>
-                    </button>
-                </div>
-            </section>
+        <div class="mt-8">
+            <label for="rpdbKey" class="block text-lg font-medium mb-2">RPDB API Key (Optional)</label>
+            <input type="text" id="rpdbKey" class="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-blue-500" placeholder="Enter your RPDB API Key for additional ratings">
+            <p class="text-sm text-gray-400 mt-2">If you have a Rating Poster DB API key, enter it to include ratings like Rotten Tomatoes. Leave blank to use TMDb/OMDb only.</p>
+        </div>
 
-            <!-- Catalog cards -->
-            <section class="mb-16">
-                <!-- MCU and X-Men (Top) -->
-                <div class="top-catalogs flex flex-col sm:flex-row gap-8 mb-8">
-                    <div 
-                        v-for="catalog in topCatalogs" 
-                        :key="catalog.id" 
-                        @click="toggleCatalog(catalog)"
-                        class="catalog-card shadow-card-float cursor-pointer min-h-[300px] flex flex-col justify-end flex-1"
-                        :class="{'selected': selectedCatalogs.includes(catalog.id), 'mcu-card': catalog.id === 'marvel-mcu'}"
-                        :style="{ backgroundImage: `url(${getCatalogImage(catalog.id)})` }"
-                    >
-                        <div class="card-content p-6">
-                            <div class="flex items-center mb-4">
-                                <i :class="'fas fa-' + getIconForCatalog(catalog)" class="text-3xl text-marvelgold mr-4"></i>
-                                <h3 class="text-xl font-bold">{{ catalog.name }}</h3>
-                            </div>
-                            <p class="text-sm text-gray-300 mb-5">{{ catalog.description }}</p>
-                            <div class="flex justify-between items-center">
-                                <span class="text-xs bg-marveldark px-3 py-1 rounded-full">{{ catalog.category }}</span>
-                                <input 
-                                    type="checkbox" 
-                                    :id="catalog.id" 
-                                    :value="catalog.id" 
-                                    v-model="selectedCatalogs"
-                                    class="h-6 w-6 accent-marvelgold"
-                                    @click.stop
-                                >
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Series, Movies, Animations (Bottom) -->
-                <div class="bottom-catalogs flex flex-col sm:flex-row gap-8">
-                    <div 
-                        v-for="catalog in bottomCatalogs" 
-                        :key="catalog.id" 
-                        @click="toggleCatalog(catalog)"
-                        class="catalog-card shadow-card-float cursor-pointer min-h-[300px] flex flex-col justify-end flex-1"
-                        :class="{'selected': selectedCatalogs.includes(catalog.id)}"
-                        :style="{ backgroundImage: `url(${getCatalogImage(catalog.id)})` }"
-                    >
-                        <div class="card-content p-6">
-                            <div class="flex items-center mb-4">
-                                <i :class="'fas fa-' + getIconForCatalog(catalog)" class="text-3xl text-marvelgold mr-4"></i>
-                                <h3 class="text-xl font-bold">{{ catalog.name }}</h3>
-                            </div>
-                            <p class="text-sm text-gray-300 mb-5">{{ catalog.description }}</p>
-                            <div class="flex justify-between items-center">
-                                <span class="text-xs bg-marveldark px-3 py-1 rounded-full">{{ catalog.category }}</span>
-                                <input 
-                                    type="checkbox" 
-                                    :id="catalog.id" 
-                                    :value="catalog.id" 
-                                    v-model="selectedCatalogs"
-                                    class="h-6 w-6 accent-marvelgold"
-                                    @click.stop
-                                >
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Installation panel -->
-            <transition name="float-in">
-                <div v-if="showInstallPanel" class="bg-marveldark-light rounded-lg p-8 mt-16 shadow-cosmic">
-                    <h3 class="text-3xl font-bold mb-5 text-marvelgold">Your Saga is Ready!</h3>
-                    <p class="text-gray-300 mb-6 text-lg">Launch your custom Marvel addon in Stremio now.</p>
-                    <div class="flex flex-col sm:flex-row gap-4 mb-6">
-                        <a 
-                            :href="stremioUrl" 
-                            class="marvel-button bg-marvelred text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-marvelred-dark animate-scale-glow text-center"
-                        >
-                            <i class="fas fa-play mr-2"></i>Install Now
-                        </a>
-                        <button 
-                            @click="copyToClipboard" 
-                            class="marvel-button bg-marveldark text-white px-8 py-4 rounded-lg text-lg hover:bg-marveldark-light"
-                        >
-                            <i class="fas" :class="copied ? 'fa-check' : 'fa-copy'" class="mr-2"></i>
-                            {{ copied ? 'Copied!' : 'Copy Link' }}
-                        </button>
-                    </div>
-                    <div class="bg-marveldark p-4 rounded-lg font-mono text-sm text-gray-300 break-all">
-                        {{ installUrl }}
-                    </div>
-                    <div class="mt-6">
-                        <h4 class="text-lg font-semibold mb-4 text-marvelgold">Selected Catalogs ({{ selectedCatalogs.length }})</h4>
-                        <div class="flex flex-wrap gap-3">
-                            <span 
-                                v-for="id in selectedCatalogs" 
-                                :key="id"
-                                class="bg-marvelgold text-marveldark px-4 py-2 rounded-full text-sm flex items-center"
-                            >
-                                <i class="fas mr-2" :class="'fa-' + getIconForCatalogById(id)"></i>
-                                {{ getCatalogName(id) }}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            </transition>
-        </main>
-
-        <!-- Footer -->
-        <footer class="bg-marveldark py-12 relative">
-            <div class="container mx-auto px-4 text-center">
-                <div class="flex justify-center items-center mb-6">
-                    <img src="https://raw.githubusercontent.com/joaogonp/addon-marvel/main/assets/icon.png" alt="Marvel Universe Logo" class="w-14 h-14 object-contain mr-4">
-                    <span class="text-2xl font-bold text-marvelgold">Marvel Universe Addon</span>
-                </div>
-                <p class="text-gray-400 mb-8 text-lg">Unleash the multiverse on Stremio.</p>
-                <div class="flex justify-center space-x-8">
-                    <a href="https://github.com/joaogonp/addon-marvel" target="_blank" class="text-marvelgold hover:text-marvelgold-light">
-                        <i class="fab fa-github text-3xl"></i>
-                    </a>
-                    <a href="https://github.com/joaogonp/addon-marvel/issues" target="_blank" class="text-marvelgold hover:text-marvelgold-light">
-                        <i class="fas fa-bug text-3xl"></i>
-                    </a>
-                </div>
-                <p class="text-sm text-gray-500 mt-8">© 2025 Marvel Universe Addon</p>
-            </div>
-        </footer>
-
-        <!-- Copy notification -->
-        <transition name="fade">
-            <div v-if="showCopiedToast" class="notification bg-marvelgold text-marveldark px-5 py-3 rounded-lg shadow-cosmic">
-                <i class="fas fa-check mr-2"></i>Link copied!
-            </div>
-        </transition>
+        <div class="mt-8">
+            <h2 class="text-xl font-semibold mb-4">Generated Addon Link</h2>
+            <div id="generatedLink" class="generated-link">Select at least one catalog to generate the link.</div>
+            <button id="copyButton" class="copy-button" disabled>Copy Link</button>
+        </div>
     </div>
 
     <script>
-        new Vue({
-            el: '#app',
-            data: {
-                catalogs: [
-                    { 
-                        id: 'marvel-mcu', 
-                        name: 'MCU Chronological', 
-                        category: 'Timeline',
-                        description: 'The MCU in epic story order.',
-                        icon: 'calendar-alt'
-                    },
-                    { 
-                        id: 'xmen', 
-                        name: 'X-Men Legacy', 
-                        category: 'Character',
-                        description: 'Every X-Men adventure.',
-                        icon: 'mask'
-                    },
-                    { 
-                        id: 'series', 
-                        name: 'Marvel Series', 
-                        category: 'Content Type',
-                        description: 'Gripping Marvel TV shows.',
-                        icon: 'tv'
-                    },
-                    { 
-                        id: 'movies', 
-                        name: 'Marvel Movies', 
-                        category: 'Content Type',
-                        description: 'Blockbuster Marvel films.',
-                        icon: 'film'
-                    },
-                    { 
-                        id: 'animations', 
-                        name: 'Marvel Animations', 
-                        category: 'Content Type',
-                        description: 'Animated Marvel epics.',
-                        icon: 'play-circle'
-                    }
-                ],
-                selectedCatalogs: [],
-                showInstallPanel: false,
-                installUrl: '',
-                stremioUrl: '',
-                copied: false,
-                showCopiedToast: false,
-                darkMode: true
-            },
-            computed: {
-                topCatalogs() {
-                    return this.catalogs.filter(c => ['marvel-mcu', 'xmen'].includes(c.id));
-                },
-                bottomCatalogs() {
-                    return this.catalogs.filter(c => ['series', 'movies', 'animations'].includes(c.id));
-                }
-            },
-            watch: {
-                selectedCatalogs(newSelection, oldSelection) {
-                    if (this.showInstallPanel && JSON.stringify(newSelection) !== JSON.stringify(oldSelection)) {
-                        this.showInstallPanel = false;
-                    }
-                }
-            },
-            methods: {
-                toggleDarkMode() {
-                    this.darkMode = !this.darkMode;
-                    document.documentElement.classList.toggle('dark', this.darkMode);
-                    localStorage.setItem('darkMode', this.darkMode ? 'enabled' : 'disabled');
-                },
-                selectAll() {
-                    this.selectedCatalogs = this.catalogs.map(c => c.id);
-                },
-                deselectAll() {
-                    this.selectedCatalogs = [];
-                },
-                toggleCatalog(catalog) {
-                    const index = this.selectedCatalogs.indexOf(catalog.id);
-                    if (index === -1) {
-                        this.selectedCatalogs.push(catalog.id);
-                    } else {
-                        this.selectedCatalogs.splice(index, 1);
-                    }
-                },
-                generateLink() {
-                    if (this.selectedCatalogs.length === 0) {
-                        alert('Select at least one catalog to assemble your addon.');
-                        return;
-                    }
-
-                    const host = window.location.host;
-                    const protocol = window.location.protocol;
-                    const allCatalogIds = this.catalogs.map(c => c.id);
-                    const sortedSelected = [...this.selectedCatalogs].sort();
-                    const sortedAll = [...allCatalogIds].sort();
-                    const allSelected = sortedSelected.length === sortedAll.length && sortedSelected.every((val, idx) => val === sortedAll[idx]);
-
-                    if (allSelected) {
-                        this.installUrl = `${protocol}//${host}/manifest.json`;
-                        this.stremioUrl = `stremio://${host}/manifest.json`;
-                    } else {
-                        const catalogParam = this.selectedCatalogs.join(',');
-                        this.installUrl = `${protocol}//${host}/catalog/${encodeURIComponent(catalogParam)}/manifest.json`;
-                        this.stremioUrl = `stremio://${host}/catalog/${encodeURIComponent(catalogParam)}/manifest.json`;
-                    }
-
-                    this.showInstallPanel = true;
-                    setTimeout(() => {
-                        const panel = document.querySelector('.bg-marveldark-light');
-                        if (panel) {
-                            panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        }
-                    }, 100);
-                },
-                getCatalogName(id) {
-                    const catalog = this.catalogs.find(c => c.id === id);
-                    return catalog ? catalog.name : id;
-                },
-                getIconForCatalog(catalog) {
-                    return catalog.icon || 'folder';
-                },
-                getIconForCatalogById(id) {
-                    const catalog = this.catalogs.find(c => c.id === id);
-                    return catalog ? (catalog.icon || 'folder') : 'folder';
-                },
-                getCatalogImage(id) {
-                    // Replace with real assets from your repository
-                    const imageMap = {
-                        'marvel-mcu': 'https://raw.githubusercontent.com/joaogonp/Addon-marvel-test/refs/heads/main/assets/background.jpg',
-                        'xmen': 'https://raw.githubusercontent.com/joaogonp/Addon-marvel-test/refs/heads/main/assets/xmenwebsite.jpg',
-                        'movies': 'https://images.unsplash.com/photo-1621849400072-3f4d1eb38892?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-                        'series': 'https://images.unsplash.com/photo-1621849400072-3f4d1eb38892?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-                        'animations': 'https://images.unsplash.com/photo-1621849400072-3f4d1eb38892?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
-                    };
-                    return imageMap[id] || 'https://images.unsplash.com/photo-1621849400072-3f4d1eb38892?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
-                },
-                copyToClipboard() {
-                    navigator.clipboard.writeText(this.installUrl).then(() => {
-                        this.copied = true;
-                        this.showCopiedToast = true;
-                        setTimeout(() => this.showCopiedToast = false, 2000);
-                        setTimeout(() => this.copied = false, 3000);
-                    }).catch(err => {
-                        console.error('Failed to copy:', err);
-                    });
-                },
-                checkDarkModePreference() {
-                    const savedMode = localStorage.getItem('darkMode');
-                    if (savedMode === 'enabled' || (!savedMode && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                        this.darkMode = true;
-                        document.documentElement.classList.add('dark');
-                    }
-                }
-            },
-            created() {
-                let initialSelectedIds = [];
-                const path = window.location.pathname;
-                const parts = path.split('/');
-
-                const allAvailableCatalogIds = this.catalogs.map(c => c.id);
-                if (parts.length === 4 && parts[1].toLowerCase() === 'catalog' && parts[3].toLowerCase() === 'configure') {
-                    const encodedIdsString = parts[2];
-                    if (encodedIdsString) {
-                        const idsString = decodeURIComponent(encodedIdsString);
-                        const potentialIds = idsString.split(',').map(id => id.trim()).filter(id => id);
-                        initialSelectedIds = potentialIds.filter(id => allAvailableCatalogIds.includes(id));
-                    }
-                }
-
-                this.selectedCatalogs = initialSelectedIds.length > 0 ? initialSelectedIds : allAvailableCatalogIds;
-            },
-            mounted() {
-                this.checkDarkModePreference();
+        async function fetchCatalogs() {
+            try {
+                const response = await fetch('/api/catalogs');
+                const catalogs = await response.json();
+                renderCatalogs(catalogs);
+            } catch (error) {
+                console.error('Error fetching catalogs:', error);
+                document.getElementById('catalogs').innerHTML = '<p class="text-red-500">Error loading catalogs. Please try again later.</p>';
             }
-        });
+        }
+
+        function renderCatalogs(catalogs) {
+            const catalogsContainer = document.getElementById('catalogs');
+            catalogsContainer.innerHTML = '';
+
+            catalogs.forEach(catalog => {
+                const card = document.createElement('div');
+                card.className = 'catalog-card';
+                card.innerHTML = `
+                    <div class="flex items-center mb-4">
+                        <input type="checkbox" id="${catalog.id}" class="catalog-checkbox" ${catalog.id === 'marvel-mcu' ? 'checked' : ''}>
+                        <label for="${catalog.id}" class="text-lg font-medium">${catalog.name}</label>
+                    </div>
+                    <p class="text-gray-400">${catalog.description}</p>
+                `;
+                catalogsContainer.appendChild(card);
+            });
+
+            updateGeneratedLink();
+            document.querySelectorAll('.catalog-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', updateGeneratedLink);
+            });
+            document.getElementById('rpdbKey').addEventListener('input', updateGeneratedLink);
+        }
+
+        function updateGeneratedLink() {
+            const selectedCatalogs = Array.from(document.querySelectorAll('.catalog-checkbox:checked')).map(checkbox => checkbox.id);
+            const rpdbKey = document.getElementById('rpdbKey').value.trim();
+            const generatedLink = document.getElementById('generatedLink');
+            const copyButton = document.getElementById('copyButton');
+
+            if (selectedCatalogs.length === 0) {
+                generatedLink.textContent = 'Select at least one catalog to generate the link.';
+                copyButton.disabled = true;
+                return;
+            }
+
+            let catalogsParam = selectedCatalogs.join(',');
+            if (rpdbKey) {
+                catalogsParam += `,rpdb_${encodeURIComponent(rpdbKey)}`;
+            }
+
+            const link = `${window.location.origin}/catalog/${encodeURIComponent(catalogsParam)}/manifest.json`;
+            generatedLink.textContent = link;
+            copyButton.disabled = false;
+
+            copyButton.onclick = () => {
+                navigator.clipboard.writeText(link).then(() => {
+                    alert('Link copied to clipboard!');
+                }).catch(err => {
+                    console.error('Error copying link:', err);
+                    alert('Failed to copy link. Please copy it manually.');
+                });
+            };
+        }
+
+        fetchCatalogs();
     </script>
 </body>
 </html>
