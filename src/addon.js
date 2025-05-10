@@ -56,6 +56,46 @@ app.get('/catalog/:ids/configure', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'configure.html'));
 });
 
+// Endpoint para validar RPDB_API_KEY
+app.get('/api/validate-rpdb', async (req, res) => {
+    const rpdbKey = req.query.key;
+    if (!rpdbKey) {
+        return res.status(400).json({ valid: false, error: 'No RPDB API Key provided.' });
+    }
+
+    const testUrl = `https://api.ratingposterdb.com/posters/movie/tt0848228?api_key=${encodeURIComponent(rpdbKey)}`;
+    try {
+        const response = await axios.get(testUrl);
+        if (response.status === 200 && response.data?.poster) {
+            console.log(`RPDB key validation successful for key: ${rpdbKey.substring(0, 4)}...`);
+            return res.json({ valid: true });
+        } else {
+            console.warn(`RPDB key validation failed for key: ${rpdbKey.substring(0, 4)}... (Status: ${response.status})`);
+            return res.status(400).json({ valid: false, error: 'Invalid RPDB API Key or no poster returned.' });
+        }
+    } catch (error) {
+        console.warn(`RPDB key validation error for key: ${rpdbKey.substring(0, 4)}...`, error.message);
+        let errorMessage = 'Invalid RPDB API Key.';
+        if (error.response) {
+            if (error.response.status === 403) {
+                errorMessage = 'RPDB API Key is unauthorized (403).';
+            } else if (error.response.status === 429) {
+                errorMessage = 'RPDB API Key rate limit exceeded (429).';
+            } else {
+                errorMessage = `RPDB API error (Status: ${error.response.status}).`;
+            }
+        }
+        return res.status(400).json({ valid: false, error: errorMessage });
+    }
+});
+
+// Endpoint para limpar cache (útil para testes)
+app.get('/api/clear-cache', (req, res) => {
+    cachedCatalog = {};
+    console.log('Cache cleared.');
+    res.json({ message: 'Cache cleared successfully.' });
+});
+
 // Cache para catálogos
 let cachedCatalog = {};
 
@@ -88,10 +128,10 @@ async function validateRpdbKey(rpdbKey) {
         return false;
     }
 
-    const testUrl = `https://api.ratingposterdb.com/ratings/movie/tt0848228?api_key=${rpdbKey}`;
+    const testUrl = `https://api.ratingposterdb.com/posters/movie/tt0848228?api_key=${rpdbKey}`;
     try {
         const res = await axios.get(testUrl);
-        if (res.status === 200) {
+        if (res.status === 200 && res.data?.poster) {
             return true;
         }
     } catch (err) {
@@ -104,7 +144,7 @@ async function validateRpdbKey(rpdbKey) {
     return false;
 }
 
-// Função para buscar ratings do RPDB (opcional)
+// Função para buscar ratings e posters do RPDB
 async function getRpdbRatings(imdbId, tmdbId, type, rpdbKey) {
     if (!rpdbKey || invalidRpdbKeys.has(rpdbKey)) {
         return {};
@@ -121,20 +161,39 @@ async function getRpdbRatings(imdbId, tmdbId, type, rpdbKey) {
         return {};
     }
 
-    const url = `https://api.ratingposterdb.com/ratings/${type}/${id}?api_key=${rpdbKey}`;
+    // Buscar ratings
+    const ratingsUrl = `https://api.ratingposterdb.com/ratings/${type}/${id}?api_key=${rpdbKey}`;
+    let ratingsData = {};
     try {
-        const res = await axios.get(url);
-        console.log(`RPDB ratings fetched for ${id}:`, res.data);
-        return res.data || {};
+        const ratingsRes = await axios.get(ratingsUrl);
+        ratingsData = ratingsRes.data || {};
+        console.log(`RPDB ratings fetched for ${id}:`, ratingsData);
     } catch (err) {
         if (err.response?.status !== 403) {
-            console.error(`RPDB error for ${id}: ${err.message}`);
+            console.error(`RPDB ratings error for ${id}: ${err.message}`);
         }
-        return {};
     }
+
+    // Buscar poster
+    const posterUrl = `https://api.ratingposterdb.com/posters/${type}/${id}?api_key=${rpdbKey}`;
+    let posterData = {};
+    try {
+        const posterRes = await axios.get(posterUrl);
+        posterData = posterRes.data || {};
+        console.log(`RPDB poster fetched for ${id}:`, posterData.poster || 'No poster');
+    } catch (err) {
+        if (err.response?.status !== 403) {
+            console.error(`RPDB poster error for ${id}: ${err.message}`);
+        }
+    }
+
+    return {
+        ...ratingsData,
+        poster: posterData.poster || null
+    };
 }
 
-// Função para buscar dados adicionais (TMDb, OMDb, RPDB opcional)
+// Função para buscar dados adicionais (TMDb, OMDb, RPDB)
 async function fetchAdditionalData(item, rpdbKey) {
     console.log('\n--- Fetching details for item: ---', item);
 
@@ -234,14 +293,21 @@ async function fetchAdditionalData(item, rpdbKey) {
         tmdbImagesData = tmdbImagesRes.data || {};
         rpdbData = rpdbRes || {};
 
-        let poster = item.poster || null;
-        if (!poster && tmdbData.poster_path) {
+        // Priorizar poster do RPDB (se disponível), depois TMDb, OMDb, e por último item.poster
+        let poster = null;
+        if (rpdbData.poster) {
+            poster = rpdbData.poster;
+            console.log(`Using RPDB poster for ${item.title}: ${poster}`);
+        } else if (tmdbData.poster_path) {
             poster = `https://image.tmdb.org/t/p/w500${tmdbData.poster_path}`;
-        }
-        if (!poster && omdbData.Poster && omdbData.Poster !== 'N/A') {
+            console.log(`Using TMDb poster for ${item.title}: ${poster}`);
+        } else if (omdbData.Poster && omdbData.Poster !== 'N/A') {
             poster = omdbData.Poster;
-        }
-        if (!poster) {
+            console.log(`Using OMDb poster for ${item.title}: ${poster}`);
+        } else if (item.poster) {
+            poster = item.poster;
+            console.log(`Using data file poster for ${item.title}: ${poster}`);
+        } else {
             poster = 'https://m.media-amazon.com/images/M/MV5BMTc5MDE2ODcwNV5BMl5BanBnXkFtZTgwMzI2NzQ2NzM@._V1_SX300.jpg';
             console.warn(`No poster found for ${item.title} (${lookupId}), using fallback.`);
         }
@@ -255,6 +321,12 @@ async function fetchAdditionalData(item, rpdbKey) {
         }
 
         const description = item.overview || tmdbData.overview || omdbData.Plot || 'No description available.';
+
+        // Validar tipo do item retornado pelo TMDb
+        const expectedType = item.type;
+        if (tmdbData.id && tmdbData.media_type && tmdbData.media_type !== expectedType) {
+            console.warn(`TMDb returned wrong media type for ${item.title} (${lookupId}): expected ${expectedType}, got ${tmdbData.media_type}`);
+        }
 
         const meta = {
             id: lookupId,
