@@ -46,6 +46,21 @@
         .copy-button:hover {
             background-color: #2b6cb0;
         }
+        .validate-button {
+            background-color: #38a169;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            margin-left: 8px;
+            cursor: pointer;
+        }
+        .validate-button:hover {
+            background-color: #2f855a;
+        }
+        .validate-button:disabled {
+            background-color: #4a5568;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
@@ -59,8 +74,12 @@
 
         <div class="mt-8">
             <label for="rpdbKey" class="block text-lg font-medium mb-2">RPDB API Key (Optional)</label>
-            <input type="text" id="rpdbKey" class="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-blue-500" placeholder="Enter your RPDB API Key for additional ratings">
-            <p class="text-sm text-gray-400 mt-2">If you have a Rating Poster DB API key, enter it to include ratings like Rotten Tomatoes. Leave blank to use TMDb/OMDb only.</p>
+            <div class="flex items-center">
+                <input type="text" id="rpdbKey" class="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-blue-500" placeholder="Enter your RPDB API Key for additional ratings">
+                <button id="validateRpdbKey" class="validate-button" disabled>Validate</button>
+            </div>
+            <p class="text-sm text-gray-400 mt-2">If you have a Rating Poster DB API key, enter it to include ratings like Rotten Tomatoes. Leave blank to use TMDb/OMDb only. Get a key at <a href="https://ratingposterdb.com" target="_blank" class="text-blue-500 hover:underline">ratingposterdb.com</a>.</p>
+            <p id="rpdbValidationMessage" class="text-sm mt-2"></p>
         </div>
 
         <div class="mt-8">
@@ -79,6 +98,32 @@
             } catch (error) {
                 console.error('Error fetching catalogs:', error);
                 document.getElementById('catalogs').innerHTML = '<p class="text-red-500">Error loading catalogs. Please try again later.</p>';
+            }
+        }
+
+        async function validateRpdbKey(key) {
+            const validationMessage = document.getElementById('rpdbValidationMessage');
+            if (!key) {
+                validationMessage.textContent = '';
+                return false;
+            }
+
+            try {
+                const response = await fetch(`https://api.ratingposterdb.com/ratings/movie/tt0848228?api_key=${encodeURIComponent(key)}`);
+                if (response.ok) {
+                    validationMessage.textContent = 'Valid RPDB API Key!';
+                    validationMessage.className = 'text-sm text-green-500 mt-2';
+                    return true;
+                } else {
+                    validationMessage.textContent = 'Invalid RPDB API Key. Please check and try again.';
+                    validationMessage.className = 'text-sm text-red-500 mt-2';
+                    return false;
+                }
+            } catch (error) {
+                console.error('Error validating RPDB key:', error);
+                validationMessage.textContent = 'Error validating key. Please try again later.';
+                validationMessage.className = 'text-sm text-red-500 mt-2';
+                return false;
             }
         }
 
@@ -103,7 +148,17 @@
             document.querySelectorAll('.catalog-checkbox').forEach(checkbox => {
                 checkbox.addEventListener('change', updateGeneratedLink);
             });
-            document.getElementById('rpdbKey').addEventListener('input', updateGeneratedLink);
+
+            const rpdbKeyInput = document.getElementById('rpdbKey');
+            const validateButton = document.getElementById('validateRpdbKey');
+            rpdbKeyInput.addEventListener('input', () => {
+                updateGeneratedLink();
+                validateButton.disabled = !rpdbKeyInput.value.trim();
+            });
+            validateButton.addEventListener('click', async () => {
+                await validateRpdbKey(rpdbKeyInput.value.trim());
+                updateGeneratedLink();
+            });
         }
 
         function updateGeneratedLink() {
