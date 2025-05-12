@@ -498,7 +498,7 @@ app.get('/api/catalogs', (req, res) => {
             name: 'MCU Chronologically Ordered', 
             category: 'Timeline',
             description: 'Browse the Marvel Cinematic Universe in chronological story order',
-            icon: 'mcu-logo'
+            icon: 'calendar-alt'
         },
         { 
             id: 'xmen', 
