@@ -16,13 +16,13 @@ let tmdbKey, omdbKey, port;
 try {
     ({ tmdbKey, omdbKey, port } = require('./config'));
 } catch (error) {
-    console.error('Erro ao carregar config.js. Usando variáveis de ambiente.', error);
+    console.error('Error loading config.js. Falling back to environment variables.', error);
     port = process.env.PORT || 7000;
     tmdbKey = process.env.TMDB_API_KEY;
     omdbKey = process.env.OMDB_API_KEY;
     
     if (!tmdbKey || !omdbKey) {
-        console.error('CRÍTICO: Chaves de API (TMDB_API_KEY, OMDB_API_KEY) estão faltando. O addon não pode buscar metadados.');
+        console.error('CRITICAL: API keys (TMDB_API_KEY, OMDB_API_KEY) are missing. Addon cannot fetch metadata.');
     }
 }
 
@@ -35,43 +35,43 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Cache por 3 semanas
+// Cache for 3 weeks
 app.use((req, res, next) => {
     res.setHeader('Cache-Control', 'public, max-age=1814400');
     next();
 });
 
-// Health check para o Render
+// Health check for Render
 app.get('/health', (req, res) => {
     res.status(200).send('OK');
 });
 
-// Rota para servir configure.html para caminhos como /catalog/id1,id2/configure
+// Serve configure.html for paths like /catalog/id1,id2/configure
 app.get('/catalog/:ids/configure', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'configure.html'));
 });
 
-// Rota para a página de configuração
+// Configuration page
 app.get('/configure', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'configure.html'));
 });
 
-// Variável para armazenar cache separado por ID
+// Cache storage per ID
 let cachedCatalog = {};
 
-// Função auxiliar para buscar detalhes do TMDb
+// Helper function to fetch TMDb details
 async function getTmdbDetails(id, type) {
     const url = `https://api.themoviedb.org/3/${type}/${id}?api_key=${tmdbKey}&language=en-US&append_to_response=external_ids`;
     try {
         const res = await axios.get(url);
         return res;
     } catch (err) {
-        console.error(`Erro ao buscar detalhes do TMDb para ${type}/${id}: ${err.message}`);
+        console.error(`Error fetching TMDb details for ${type}/${id}: ${err.message}`);
         return {};
     }
 }
 
-// Função auxiliar para substituir posters por posters do RPDB quando uma chave válida é fornecida
+// Helper function to replace posters with RPDB posters when a valid key is provided
 function replaceRpdbPosters(rpdbKey, metas) {
     if (!rpdbKey) {
         return metas;
@@ -89,28 +89,28 @@ function replaceRpdbPosters(rpdbKey, metas) {
     });
 }
 
-// Função para buscar metadados adicionais
+// Function to fetch additional metadata
 async function fetchAdditionalData(item) {
-    console.log('\n--- Buscando detalhes para o item: ---', item);
+    console.log('\n--- Fetching details for item: ---', item);
 
-    // Validação básica do item
+    // Basic item validation
     if (!item || (!item.imdbId && !item.id) || !item.type || !item.title) {
-        console.warn('Ignorando item devido a dados essenciais ausentes:', item);
+        console.warn('Skipping item due to missing essential data:', item);
         return null;
     }
     const lookupId = item.imdbId || item.id;
     const idPrefix = lookupId.split('_')[0];
     const isImdb = idPrefix === 'tt' || (item.imdbId && !item.imdbId.startsWith('tmdb_'));
 
-    // Verificar se as chaves de API estão disponíveis
+    // Check if API keys are available
     if (!tmdbKey || (!omdbKey && isImdb)) {
-        console.warn(`Ignorando busca de metadados para ${item.title} (${lookupId}) porque as chaves de API estão faltando.`);
+        console.warn(`Skipping metadata fetch for ${item.title} (${lookupId}) due to missing API keys.`);
         return {
             id: lookupId,
             type: item.type,
             name: item.type === 'series' ? item.title.replace(/ Season \d+/, '') : item.title,
             poster: item.poster || 'https://m.media-amazon.com/images/M/MV5BMTc5MDE2ODcwNV5BMl5BanBnXkFtZTgwMzI2NzQ2NzM@._V1_SX300.jpg',
-            description: item.overview || 'Busca de metadados indisponível (chave de API ausente).',
+            description: item.overview || 'Metadata fetch unavailable (missing API key).',
             releaseInfo: item.releaseYear || 'N/A',
             imdbRating: 'N/A',
             genres: item.genres ? item.genres.map(g => g.name) : ['Action', 'Adventure']
@@ -122,21 +122,21 @@ async function fetchAdditionalData(item) {
     let tmdbImagesData = {};
 
     try {
-        // Chamada ao OMDb apenas se tivermos um ID IMDb real
+        // OMDb call only if we have a real IMDb ID
         const omdbPromise = isImdb
             ? axios.get(`http://www.omdbapi.com/?i=${lookupId}&apikey=${omdbKey}`).catch((err) => {
-                  console.error(`Erro no OMDb para ${lookupId}: ${err.message}`);
+                  console.error(`OMDb error for ${lookupId}: ${err.message}`);
                   return {};
               })
             : Promise.resolve({});
 
-        // Chamada de busca/detalhes do TMDb
+        // TMDb search/details call
         let effectiveTmdbId = item.tmdbId || (idPrefix === 'tmdb' ? lookupId.split('_')[1] : null);
         let tmdbDetailsPromise;
         if (effectiveTmdbId) {
             const tmdbDetailsUrl = `https://api.themoviedb.org/3/${item.type}/${effectiveTmdbId}?api_key=${tmdbKey}&language=en-US`;
             tmdbDetailsPromise = axios.get(tmdbDetailsUrl).catch((err) => {
-                console.error(`Erro nos detalhes do TMDb para ${item.type}/${effectiveTmdbId}: ${err.message}`);
+                console.error(`TMDb details error for ${item.type}/${effectiveTmdbId}: ${err.message}`);
                 return {};
             });
         } else {
@@ -144,19 +144,19 @@ async function fetchAdditionalData(item) {
             tmdbDetailsPromise = axios.get(tmdbSearchUrl).then(res =>
                 res.data?.results?.[0] ? getTmdbDetails(res.data.results[0].id, item.type) : {}
             ).catch((err) => {
-                console.error(`Erro na busca do TMDb para ${item.title}: ${err.message}`);
+                console.error(`TMDb search error for ${item.title}: ${err.message}`);
                 return {};
             });
         }
 
-        // Buscar imagens usando o ID do TMDb
+        // Fetch images using TMDb ID
         const tmdbImagesPromise = tmdbDetailsPromise.then(detailsRes => {
             const foundTmdbId = detailsRes?.data?.id || effectiveTmdbId;
             if (foundTmdbId) {
-                const tmdbImagesUrl = `https://api.themoviedb.org/3/${type}/${foundTmdbId}/images?api_key=${tmdbKey}`;
+                const tmdbImagesUrl = `https://api.themoviedb.org/3/${item.type}/${foundTmdbId}/images?api_key=${tmdbKey}`;
                 return axios.get(tmdbImagesUrl).catch((err) => {
                     if (!err.response || err.response.status !== 404) {
-                        console.warn(`Erro nas imagens do TMDb para ${item.title}: ${err.message}`);
+                        console.warn(`TMDb images error for ${item.title}: ${err.message}`);
                     }
                     return {};
                 });
@@ -165,7 +165,7 @@ async function fetchAdditionalData(item) {
             }
         });
 
-        console.log(`Buscando dados para ${item.title} (${lookupId})...`);
+        console.log(`Fetching data for ${item.title} (${lookupId})...`);
         const [omdbRes, tmdbDetailsResult, tmdbImagesRes] = await Promise.all([
             omdbPromise,
             tmdbDetailsPromise,
@@ -176,7 +176,7 @@ async function fetchAdditionalData(item) {
         tmdbData = tmdbDetailsResult.data || {};
         tmdbImagesData = tmdbImagesRes.data || {};
 
-        // Prioridade do poster: local -> TMDb -> OMDb -> fallback
+        // Poster priority: local -> TMDb -> OMDb -> fallback
         let poster = item.poster || null;
         if (!poster && tmdbData.poster_path) {
             poster = `https://image.tmdb.org/t/p/w500${tmdbData.poster_path}`;
@@ -186,7 +186,7 @@ async function fetchAdditionalData(item) {
         }
         if (!poster) {
             poster = 'https://m.media-amazon.com/images/M/MV5BMTc5MDE2ODcwNV5BMl5BanBnXkFtZTgwMzI2NzQ2NzM@._V1_SX300.jpg';
-            console.warn(`Nenhum poster válido encontrado para ${item.title} (${lookupId}), usando fallback.`);
+            console.warn(`No valid poster found for ${item.title} (${lookupId}), using fallback.`);
         }
 
         let logoUrl = null;
@@ -197,7 +197,7 @@ async function fetchAdditionalData(item) {
             }
         }
 
-        const description = item.overview || tmdbData.overview || omdbData.Plot || 'Nenhuma descrição disponível.';
+        const description = item.overview || tmdbData.overview || omdbData.Plot || 'No description available.';
 
         const meta = {
             id: lookupId,
@@ -211,16 +211,16 @@ async function fetchAdditionalData(item) {
             genres: tmdbData.genres ? tmdbData.genres.map(g => g.name) : (item.genres ? item.genres.map(g => g.name) : ['Action', 'Adventure'])
         };
 
-        console.log('   > Retornando metadados:', { ...meta, description: meta.description.substring(0, 50) + '...' });
+        console.log('   > Returning metadata:', { ...meta, description: meta.description.substring(0, 50) + '...' });
         return meta;
     } catch (err) {
-        console.error(`Erro ao processar ${item.title} (${lookupId}): ${err.message}`);
+        console.error(`Error processing ${item.title} (${lookupId}): ${err.message}`);
         return {
             id: lookupId,
             type: item.type,
             name: item.type === 'series' ? item.title.replace(/ Season \d+/, '') : item.title,
             poster: item.poster || 'https://m.media-amazon.com/images/M/MV5BMTc5MDE2ODcwNV5BMl5BanBnXkFtZTgwMzI2NzQ2NzM@._V1_SX300.jpg',
-            description: item.overview || 'Nenhuma descrição disponível.',
+            description: item.overview || 'No description available.',
             releaseInfo: item.releaseYear || 'N/A',
             imdbRating: 'N/A',
             genres: item.genres ? item.genres.map(g => g.name) : ['Action', 'Adventure']
@@ -228,7 +228,7 @@ async function fetchAdditionalData(item) {
     }
 }
 
-// Função para ordenar dados por data de lançamento
+// Function to sort data by release date
 function sortByReleaseDate(data, order = 'desc') {
     return [...data].sort((a, b) => {
         const dateA = a.releaseInfo || a.releaseYear;
@@ -246,13 +246,13 @@ function sortByReleaseDate(data, order = 'desc') {
     });
 }
 
-// Lista de todos os catálogos disponíveis
+// List of all available catalogs
 function getAllCatalogs() {
     return [
         {
             type: "Marvel",
             id: "marvel-mcu",
-            name: "MCU Chronologicamente Ordenado",
+            name: "MCU Chronologically Ordered",
             extra: [
                 {
                     name: "genre",
@@ -260,8 +260,8 @@ function getAllCatalogs() {
                     isRequired: false,
                     default: null,
                     optionLabels: {
-                        new: "Novo para Antigo",
-                        old: "Antigo para Novo"
+                        new: "New to Old",
+                        old: "Old to New"
                     }
                 }
             ],
@@ -280,7 +280,7 @@ function getAllCatalogs() {
         {
             type: "Marvel",
             id: "movies",
-            name: "Filmes",
+            name: "Movies",
             extra: [
                 {
                     name: "genre",
@@ -288,7 +288,7 @@ function getAllCatalogs() {
                     isRequired: false,
                     default: null,
                     optionLabels: {
-                        new: "Novo para Antigo"
+                        new: "New to Old"
                     }
                 }
             ],
@@ -299,7 +299,7 @@ function getAllCatalogs() {
         {
             type: "Marvel",
             id: "series",
-            name: "Séries",
+            name: "Series",
             extra: [
                 {
                     name: "genre",
@@ -307,7 +307,7 @@ function getAllCatalogs() {
                     isRequired: false,
                     default: null,
                     optionLabels: {
-                        new: "Novo para Antigo"
+                        new: "New to Old"
                     }
                 }
             ],
@@ -318,7 +318,7 @@ function getAllCatalogs() {
         {
             type: "Marvel",
             id: "animations",
-            name: "Animações",
+            name: "Animations",
             extra: [
                 {
                     name: "genre",
@@ -326,8 +326,8 @@ function getAllCatalogs() {
                     isRequired: false,
                     default: "old",
                     optionLabels: {
-                        new: "Novo para Antigo",
-                        old: "Antigo para Novo"
+                        new: "New to Old",
+                        old: "Old to New"
                     }
                 }
             ],
@@ -338,13 +338,13 @@ function getAllCatalogs() {
     ];
 }
 
-// Manifest padrão
+// Default manifest
 app.get('/manifest.json', (req, res) => {
-    console.log('Manifest padrão solicitado');
+    console.log('Default manifest requested');
     
     const rpdbKey = req.query.rpdb || null;
     if (rpdbKey) {
-        console.log(`Manifest padrão com chave RPDB: ${rpdbKey.substring(0, 4)}...`);
+        console.log(`Default manifest with RPDB key: ${rpdbKey.substring(0, 4)}...`);
     }
     
     const manifestId = rpdbKey 
@@ -354,7 +354,7 @@ app.get('/manifest.json', (req, res) => {
     const manifest = {
         id: manifestId,
         name: "Marvel Teste",
-        description: "Assista ao catálogo completo da Marvel! MCU e X-Men (organizados cronologicamente), Filmes, Séries e Animações!",
+        description: "Watch the complete Marvel catalog! MCU and X-Men (chronologically ordered), Movies, Series, and Animations!",
         version: "1.3.0",
         logo: "https://raw.githubusercontent.com/joaogonp/addon-marvel/main/assets/icon.png",
         background: "https://raw.githubusercontent.com/joaogonp/addon-marvel/main/assets/background.jpg",
@@ -375,17 +375,17 @@ app.get('/manifest.json', (req, res) => {
     res.json(manifest);
 });
 
-// Manifest baseado em RPDB
+// RPDB-based manifest
 app.get('/rpdb/:rpdbKey/manifest.json', (req, res) => {
     const { rpdbKey } = req.params;
-    console.log(`Manifest baseado em RPDB solicitado com chave: ${rpdbKey.substring(0, 4)}...`);
+    console.log(`RPDB-based manifest requested with key: ${rpdbKey.substring(0, 4)}...`);
     
     const manifestId = `com.joaogonp.marveladdon.rpdb.${rpdbKey.substring(0, 8)}`;
     
     const manifest = {
         id: manifestId,
         name: "Marvel Teste",
-        description: "Assista ao catálogo completo da Marvel com avaliações do IMDb nos posters! MCU e X-Men (organizados cronologicamente), Filmes, Séries e Animações!",
+        description: "Watch the complete Marvel catalog with IMDb ratings on posters! MCU and X-Men (chronologically ordered), Movies, Series, and Animations!",
         version: "1.3.0",
         logo: "https://raw.githubusercontent.com/joaogonp/addon-marvel/main/assets/icon.png",
         background: "https://raw.githubusercontent.com/joaogonp/addon-marvel/main/assets/background.jpg",
@@ -406,7 +406,7 @@ app.get('/rpdb/:rpdbKey/manifest.json', (req, res) => {
     res.json(manifest);
 });
 
-// Manifest de catálogo personalizado
+// Custom catalog manifest
 app.get('/catalog/:catalogsParam/manifest.json', (req, res) => {
     const { catalogsParam } = req.params;
     
@@ -417,7 +417,7 @@ app.get('/catalog/:catalogsParam/manifest.json', (req, res) => {
         const parts = catalogsParam.split(':');
         selectedCatalogIds = parts[0];
         rpdbKey = parts[1];
-        console.log(`Manifest personalizado com chave RPDB: ${rpdbKey.substring(0, 4)}...`);
+        console.log(`Custom manifest with RPDB key: ${rpdbKey.substring(0, 4)}...`);
         selectedCatalogIds = selectedCatalogIds.split(',').map(id => id.trim());
     } else {
         selectedCatalogIds = catalogsParam.split(',').map(id => id.trim());
@@ -427,7 +427,7 @@ app.get('/catalog/:catalogsParam/manifest.json', (req, res) => {
     const selectedApiCatalogs = allCatalogs.filter(catalog => selectedCatalogIds.includes(catalog.id));
     
     if (selectedApiCatalogs.length === 0) {
-        return res.status(404).send('Nenhum catálogo válido selecionado ou encontrado.');
+        return res.status(404).send('No valid catalogs selected or found.');
     }
     
     const customId = rpdbKey 
@@ -438,8 +438,8 @@ app.get('/catalog/:catalogsParam/manifest.json', (req, res) => {
     
     const manifest = {
         id: manifestId,
-        name: "Marvel Teste Personalizado",
-        description: `Seu catálogo personalizado da Marvel: ${selectedApiCatalogs.map(c => c.name).join(', ')}`,
+        name: "Marvel Teste Custom",
+        description: `Your custom Marvel catalog: ${selectedApiCatalogs.map(c => c.name).join(', ')}`,
         version: "1.3.0",
         logo: "https://raw.githubusercontent.com/joaogonp/addon-marvel/main/assets/icon.png",
         background: "https://raw.githubusercontent.com/joaogonp/addon-marvel/main/assets/background.jpg",
@@ -460,44 +460,44 @@ app.get('/catalog/:catalogsParam/manifest.json', (req, res) => {
     res.json(manifest);
 });
 
-// Endpoint para informações de catálogos
+// Catalog information endpoint
 app.get('/api/catalogs', (req, res) => {
-    console.log('Informações de catálogos solicitadas');
+    console.log('Catalog information requested');
     
     const catalogInfo = [
         { 
             id: 'marvel-mcu', 
-            name: 'MCU Chronologicamente Ordenado', 
-            category: 'Linha do Tempo',
-            description: 'Navegue pelo Universo Cinematográfico da Marvel em ordem cronológica da história',
-            icon: 'calendar-alt'
+            name: 'MCU Chronologically Ordered', 
+            category: 'Timeline',
+            description: 'Browse the Marvel Cinematic Universe in chronological story order',
+            icon: 'mcu-logo'
         },
         { 
             id: 'xmen', 
             name: 'X-Men', 
-            category: 'Personagem',
-            description: 'Todos os filmes e conteúdos relacionados aos X-Men',
-            icon: 'mask'
+            category: 'Character',
+            description: 'All movies and content related to the X-Men',
+            icon: 'xmen-logo'
         },
         { 
             id: 'movies', 
-            name: 'Filmes', 
-            category: 'Tipo de Conteúdo',
-            description: 'Todos os filmes da Marvel em diferentes franquias',
+            name: 'Movies', 
+            category: 'Content Type',
+            description: 'All Marvel movies across different franchises',
             icon: 'film'
         },
         { 
             id: 'series', 
-            name: 'Séries', 
-            category: 'Tipo de Conteúdo',
-            description: 'Todas as séries de televisão da Marvel',
+            name: 'Series', 
+            category: 'Content Type',
+            description: 'All Marvel television series',
             icon: 'tv'
         },
         { 
             id: 'animations', 
-            name: 'Animações', 
-            category: 'Tipo de Conteúdo',
-            description: 'Todos os recursos animados e séries da Marvel',
+            name: 'Animations', 
+            category: 'Content Type',
+            description: 'All Marvel animated features and series',
             icon: 'play-circle'
         }
     ];
@@ -505,15 +505,15 @@ app.get('/api/catalogs', (req, res) => {
     res.json(catalogInfo);
 });
 
-// Endpoint de catálogo baseado em RPDB
+// RPDB-based catalog endpoint
 app.get('/rpdb/:rpdbKey/catalog/:type/:id.json', async (req, res) => {
     const { rpdbKey, type, id } = req.params;
     const genre = req.query.genre;
-    console.log(`Catálogo baseado em RPDB solicitado - Tipo: ${type}, ID: ${id}, Chave RPDB: ${rpdbKey.substring(0, 4)}..., Gênero: ${genre || 'padrão'}`);
+    console.log(`RPDB-based catalog requested - Type: ${type}, ID: ${id}, RPDB Key: ${rpdbKey.substring(0, 4)}..., Genre: ${genre || 'default'}`);
     
     const cacheKey = `default-${id}${genre ? `_${genre}` : ''}`;
     if (cachedCatalog[cacheKey]) {
-        console.log(`✅ Retornando catálogo em cache para ID: ${cacheKey} com posters RPDB`);
+        console.log(`✅ Returning cached catalog for ID: ${cacheKey} with RPDB posters`);
         const metasWithRpdbPosters = replaceRpdbPosters(rpdbKey, cachedCatalog[cacheKey].metas);
         return res.json({ metas: metasWithRpdbPosters });
     }
@@ -525,7 +525,7 @@ app.get('/rpdb/:rpdbKey/catalog/:type/:id.json', async (req, res) => {
         switch (id) {
             case 'marvel-mcu':
                 dataSource = chronologicalData;
-                dataSourceName = 'MCU Chronologicamente Ordenado';
+                dataSourceName = 'MCU Chronologically Ordered';
                 break;
             case 'xmen':
                 dataSource = xmenData;
@@ -533,50 +533,50 @@ app.get('/rpdb/:rpdbKey/catalog/:type/:id.json', async (req, res) => {
                 break;
             case 'movies':
                 dataSource = moviesData;
-                dataSourceName = 'Filmes';
+                dataSourceName = 'Movies';
                 break;
             case 'series':
                 dataSource = seriesData;
-                dataSourceName = 'Séries';
+                dataSourceName = 'Series';
                 break;
             case 'animations':
                 dataSource = animationsData;
-                dataSourceName = 'Animações';
+                dataSourceName = 'Animations';
                 break;
             default:
-                console.warn(`ID de catálogo não reconhecido: ${id}`);
+                console.warn(`Unrecognized catalog ID: ${id}`);
                 return res.json({ metas: [] });
         }
         
         if (!Array.isArray(dataSource)) {
-            throw new Error(`Fonte de dados para ID ${id} não é um array válido.`);
+            throw new Error(`Data source for ID ${id} is not a valid array.`);
         }
-        console.log(`Carregados ${dataSource.length} itens para o catálogo: ${dataSourceName}`);
+        console.log(`Loaded ${dataSource.length} items for catalog: ${dataSourceName}`);
         
         if (genre === 'old') {
             dataSource = sortByReleaseDate([...dataSource], 'asc');
-            console.log(`${dataSourceName} - Aplicando ordenação: asc (antigo para novo)`);
+            console.log(`${dataSourceName} - Applying sort: asc (old to new)`);
         } else if (genre === 'new') {
             dataSource = sortByReleaseDate([...dataSource], 'desc');
-            console.log(`${dataSourceName} - Aplicando ordenação: desc (novo para antigo)`);
+            console.log(`${dataSourceName} - Applying sort: desc (new to old)`);
         } else if (id === 'animations' && !genre) {
             dataSource = sortByReleaseDate([...dataSource], 'asc');
-            console.log(`${dataSourceName} - Aplicando ordenação padrão: asc (antigo para novo)`);
+            console.log(`${dataSourceName} - Applying default sort: asc (old to new)`);
         } else {
-            console.log(`${dataSourceName} - Usando ordem padrão dos dados`);
+            console.log(`${dataSourceName} - Using default data order`);
         }
     } catch (error) {
-        console.error(`❌ Erro ao carregar dados para o ID de catálogo ${id}:`, error.message);
+        console.error(`❌ Error loading data for catalog ID ${id}:`, error.message);
         return res.json({ metas: [] });
     }
     
-    console.log(`⏳ Gerando catálogo para ${dataSourceName} com posters RPDB...`);
+    console.log(`⏳ Generating catalog for ${dataSourceName} with RPDB posters...`);
     const metas = await Promise.all(
         dataSource.map(item => fetchAdditionalData(item))
     );
     
     const validMetas = metas.filter(item => item !== null);
-    console.log(`✅ Catálogo gerado com ${validMetas.length} itens para ID: ${id}`);
+    console.log(`✅ Catalog generated with ${validMetas.length} items for ID: ${id}`);
     
     cachedCatalog[cacheKey] = { metas: validMetas };
     
@@ -584,11 +584,11 @@ app.get('/rpdb/:rpdbKey/catalog/:type/:id.json', async (req, res) => {
     return res.json({ metas: metasWithRpdbPosters });
 });
 
-// Endpoint de catálogo personalizado
+// Custom catalog endpoint
 app.get('/catalog/:catalogsParam/catalog/:type/:id.json', async (req, res) => {
     const { catalogsParam, type, id } = req.params;
     const genre = req.query.genre;
-    console.log(`Catálogo personalizado solicitado - Catálogos: ${catalogsParam}, Tipo: ${type}, ID: ${id}, Gênero: ${genre || 'padrão'}`);
+    console.log(`Custom catalog requested - Catalogs: ${catalogsParam}, Type: ${type}, ID: ${id}, Genre: ${genre || 'default'}`);
     
     let rpdbKey = null;
     let catalogIds = catalogsParam;
@@ -597,12 +597,12 @@ app.get('/catalog/:catalogsParam/catalog/:type/:id.json', async (req, res) => {
         const parts = catalogsParam.split(':');
         catalogIds = parts[0];
         rpdbKey = parts[1];
-        console.log(`Chave RPDB detectada: ${rpdbKey.substring(0, 4)}...`);
+        console.log(`RPDB key detected: ${rpdbKey.substring(0, 4)}...`);
     }
     
     const cacheKey = `custom-${id}-${catalogsParam}${genre ? `_${genre}` : ''}`;
     if (cachedCatalog[cacheKey]) {
-        console.log(`✅ Retornando catálogo em cache para ID: ${cacheKey}`);
+        console.log(`✅ Returning cached catalog for ID: ${cacheKey}`);
         if (rpdbKey) {
             const metasWithRpdbPosters = replaceRpdbPosters(rpdbKey, cachedCatalog[cacheKey].metas);
             return res.json({ metas: metasWithRpdbPosters });
@@ -617,7 +617,7 @@ app.get('/catalog/:catalogsParam/catalog/:type/:id.json', async (req, res) => {
         switch (id) {
             case 'marvel-mcu':
                 dataSource = chronologicalData;
-                dataSourceName = 'MCU Chronologicamente Ordenado';
+                dataSourceName = 'MCU Chronologically Ordered';
                 break;
             case 'xmen':
                 dataSource = xmenData;
@@ -625,50 +625,50 @@ app.get('/catalog/:catalogsParam/catalog/:type/:id.json', async (req, res) => {
                 break;
             case 'movies':
                 dataSource = moviesData;
-                dataSourceName = 'Filmes';
+                dataSourceName = 'Movies';
                 break;
             case 'series':
                 dataSource = seriesData;
-                dataSourceName = 'Séries';
+                dataSourceName = 'Series';
                 break;
             case 'animations':
                 dataSource = animationsData;
-                dataSourceName = 'Animações';
+                dataSourceName = 'Animations';
                 break;
             default:
-                console.warn(`ID de catálogo não reconhecido: ${id}`);
+                console.warn(`Unrecognized catalog ID: ${id}`);
                 return res.json({ metas: [] });
         }
         
         if (!Array.isArray(dataSource)) {
-            throw new Error(`Fonte de dados para ID ${id} não é um array válido.`);
+            throw new Error(`Data source for ID ${id} is not a valid array.`);
         }
-        console.log(`Carregados ${dataSource.length} itens para o catálogo: ${dataSourceName}`);
+        console.log(`Loaded ${dataSource.length} items for catalog: ${dataSourceName}`);
         
         if (genre === 'old') {
             dataSource = sortByReleaseDate([...dataSource], 'asc');
-            console.log(`${dataSourceName} - Aplicando ordenação: asc (antigo para novo)`);
+            console.log(`${dataSourceName} - Applying sort: asc (old to new)`);
         } else if (genre === 'new') {
             dataSource = sortByReleaseDate([...dataSource], 'desc');
-            console.log(`${dataSourceName} - Aplicando ordenação: desc (novo para antigo)`);
+            console.log(`${dataSourceName} - Applying sort: desc (new to old)`);
         } else if (id === 'animations' && !genre) {
             dataSource = sortByReleaseDate([...dataSource], 'asc');
-            console.log(`${dataSourceName} - Aplicando ordenação padrão: asc (antigo para novo)`);
+            console.log(`${dataSourceName} - Applying default sort: asc (old to new)`);
         } else {
-            console.log(`${dataSourceName} - Usando ordem padrão dos dados`);
+            console.log(`${dataSourceName} - Using default data order`);
         }
     } catch (error) {
-        console.error(`❌ Erro ao carregar dados para o ID de catálogo ${id}:`, error.message);
+        console.error(`❌ Error loading data for catalog ID ${id}:`, error.message);
         return res.json({ metas: [] });
     }
     
-    console.log(`⏳ Gerando catálogo para ${dataSourceName}...`);
+    console.log(`⏳ Generating catalog for ${dataSourceName}...`);
     const metas = await Promise.all(
         dataSource.map(item => fetchAdditionalData(item))
     );
     
     const validMetas = metas.filter(item => item !== null);
-    console.log(`✅ Catálogo gerado com ${validMetas.length} itens para ID: ${id}`);
+    console.log(`✅ Catalog generated with ${validMetas.length} items for ID: ${id}`);
     
     cachedCatalog[cacheKey] = { metas: validMetas };
     
@@ -680,11 +680,11 @@ app.get('/catalog/:catalogsParam/catalog/:type/:id.json', async (req, res) => {
     return res.json(cachedCatalog[cacheKey]);
 });
 
-// Endpoint de catálogo padrão
+// Default catalog endpoint
 app.get('/catalog/:type/:id.json', async (req, res) => {
     const { type, id } = req.params;
     const genre = req.query.genre;
-    console.log(`Catálogo padrão solicitado - Tipo: ${type}, ID: ${id}, Gênero: ${genre || 'padrão'}`);
+    console.log(`Default catalog requested - Type: ${type}, ID: ${id}, Genre: ${genre || 'default'}`);
     
     let rpdbKey = req.query.rpdb || null;
     const referer = req.get('Referrer') || '';
@@ -696,12 +696,12 @@ app.get('/catalog/:type/:id.json', async (req, res) => {
     }
     
     if (rpdbKey) {
-        console.log(`Chave RPDB detectada: ${rpdbKey.substring(0, 4)}...`);
+        console.log(`RPDB key detected: ${rpdbKey.substring(0, 4)}...`);
     }
     
     const cacheKey = `default-${id}${genre ? `_${genre}` : ''}`;
     if (cachedCatalog[cacheKey]) {
-        console.log(`✅ Retornando catálogo em cache para ID: ${cacheKey}`);
+        console.log(`✅ Returning cached catalog for ID: ${cacheKey}`);
         if (rpdbKey) {
             const metasWithRpdbPosters = replaceRpdbPosters(rpdbKey, cachedCatalog[cacheKey].metas);
             return res.json({ metas: metasWithRpdbPosters });
@@ -716,7 +716,7 @@ app.get('/catalog/:type/:id.json', async (req, res) => {
         switch (id) {
             case 'marvel-mcu':
                 dataSource = chronologicalData;
-                dataSourceName = 'MCU Chronologicamente Ordenado';
+                dataSourceName = 'MCU Chronologically Ordered';
                 break;
             case 'xmen':
                 dataSource = xmenData;
@@ -724,50 +724,50 @@ app.get('/catalog/:type/:id.json', async (req, res) => {
                 break;
             case 'movies':
                 dataSource = moviesData;
-                dataSourceName = 'Filmes';
+                dataSourceName = 'Movies';
                 break;
             case 'series':
                 dataSource = seriesData;
-                dataSourceName = 'Séries';
+                dataSourceName = 'Series';
                 break;
             case 'animations':
                 dataSource = animationsData;
-                dataSourceName = 'Animações';
+                dataSourceName = 'Animations';
                 break;
             default:
-                console.warn(`ID de catálogo não reconhecido: ${id}`);
+                console.warn(`Unrecognized catalog ID: ${id}`);
                 return res.json({ metas: [] });
         }
         
         if (!Array.isArray(dataSource)) {
-            throw new Error(`Fonte de dados para ID ${id} não é um array válido.`);
+            throw new Error(`Data source for ID ${id} is not a valid array.`);
         }
-        console.log(`Carregados ${dataSource.length} itens para o catálogo: ${dataSourceName}`);
+        console.log(`Loaded ${dataSource.length} items for catalog: ${dataSourceName}`);
         
         if (genre === 'old') {
             dataSource = sortByReleaseDate([...dataSource], 'asc');
-            console.log(`${dataSourceName} - Aplicando ordenação: asc (antigo para novo)`);
+            console.log(`${dataSourceName} - Applying sort: asc (old to new)`);
         } else if (genre === 'new') {
             dataSource = sortByReleaseDate([...dataSource], 'desc');
-            console.log(`${dataSourceName} - Aplicando ordenação: desc (novo para antigo)`);
+            console.log(`${dataSourceName} - Applying sort: desc (new to old)`);
         } else if (id === 'animations' && !genre) {
             dataSource = sortByReleaseDate([...dataSource], 'asc');
-            console.log(`${dataSourceName} - Aplicando ordenação padrão: asc (antigo para novo)`);
+            console.log(`${dataSourceName} - Applying default sort: asc (old to new)`);
         } else {
-            console.log(`${dataSourceName} - Usando ordem padrão dos dados`);
+            console.log(`${dataSourceName} - Using default data order`);
         }
     } catch (error) {
-        console.error(`❌ Erro ao carregar dados para o ID de catálogo ${id}:`, error.message);
+        console.error(`❌ Error loading data for catalog ID ${id}:`, error.message);
         return res.json({ metas: [] });
     }
     
-    console.log(`⏳ Gerando catálogo para ${dataSourceName}...`);
+    console.log(`⏳ Generating catalog for ${dataSourceName}...`);
     const metas = await Promise.all(
         dataSource.map(item => fetchAdditionalData(item))
     );
     
     const validMetas = metas.filter(item => item !== null);
-    console.log(`✅ Catálogo gerado com ${validMetas.length} itens para ID: ${id}`);
+    console.log(`✅ Catalog generated with ${validMetas.length} items for ID: ${id}`);
     
     cachedCatalog[cacheKey] = { metas: validMetas };
     
@@ -779,16 +779,16 @@ app.get('/catalog/:type/:id.json', async (req, res) => {
     return res.json(cachedCatalog[cacheKey]);
 });
 
-// Rotas padrão
+// Default routes
 app.get('/', (req, res) => {
     res.redirect('/configure');
 });
 
 app.listen(port, () => {
-    console.log(`Servidor do Addon Marvel Teste rodando em http://localhost:${port}/`);
-    console.log(`Página de configuração: http://localhost:${port}/configure`);
-    console.log(`Para instalar com catálogos personalizados: http://localhost:${port}/catalog/CATALOG_IDS/manifest.json`);
+    console.log(`Marvel Teste Addon server running at http://localhost:${port}/`);
+    console.log(`Configuration page: http://localhost:${port}/configure`);
+    console.log(`To install with custom catalogs: http://localhost:${port}/catalog/CATALOG_IDS/manifest.json`);
 });
 
-// Exportar a função fetchAdditionalData para testes
+// Export fetchAdditionalData for testing
 module.exports = { fetchAdditionalData };
