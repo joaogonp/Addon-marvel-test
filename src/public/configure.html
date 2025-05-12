@@ -63,7 +63,15 @@
         .catalog-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            grid-auto-rows: 1fr;
             gap: 1.5rem;
+        }
+        
+        @media (max-width: 640px) {
+            .catalog-grid {
+                grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+                gap: 1rem;
+            }
         }
         
         .catalog-item {
@@ -144,7 +152,8 @@
             object-fit: contain;
         }
         
-        .catalog-item.selected .custom-icon {
+        .catalog-item.selected .custom-icon,
+        .catalog-item.selected .item-icon {
             filter: brightness(0) invert(1) drop-shadow(0 0 3px rgba(229, 36, 41, 0.7));
         }
         
@@ -299,16 +308,18 @@
                             @click="toggleCatalog(catalog)"
                             :class="['catalog-item', {'selected pulse-effect': selectedCatalogs.includes(catalog.id)}]"
                         >
-                            <!-- Ícones personalizados para MCU e X-Men -->
-                            <template v-if="catalog.id === 'marvel-mcu'">
+                            <!-- Ícones personalizados para MCU e X-Men com fallback -->
+                            <template v-if="catalog.icon === 'mcu-logo'">
                                 <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Marvel_Studios_2016_logo.svg/320px-Marvel_Studios_2016_logo.svg.png" 
                                     alt="MCU Logo" 
-                                    class="custom-icon mcu-icon">
+                                    class="custom-icon mcu-icon"
+                                    @error="catalog.icon = 'shield-alt'">
                             </template>
-                            <template v-else-if="catalog.id === 'xmen'">
+                            <template v-else-if="catalog.icon === 'xmen-logo'">
                                 <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/X-Men_logo.svg/320px-X-Men_logo.svg.png" 
                                     alt="X-Men Logo" 
-                                    class="custom-icon xmen-icon">
+                                    class="custom-icon xmen-icon"
+                                    @error="catalog.icon = 'mask'">
                             </template>
                             <template v-else>
                                 <i :class="['fas fa-' + catalog.icon, 'item-icon']"></i>
