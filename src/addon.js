@@ -153,7 +153,7 @@ async function fetchAdditionalData(item) {
         const tmdbImagesPromise = tmdbDetailsPromise.then(detailsRes => {
             const foundTmdbId = detailsRes?.data?.id || effectiveTmdbId;
             if (foundTmdbId) {
-                const tmdbImagesUrl = `https://api.themoviedb.org/3/${item.type}/${foundTmdbId}/images?api_key=${tmdbKey}`;
+                const tmdbImagesUrl = `https://api.themoviedb.org/3/${type}/${foundTmdbId}/images?api_key=${tmdbKey}`;
                 return axios.get(tmdbImagesUrl).catch((err) => {
                     if (!err.response || err.response.status !== 404) {
                         console.warn(`Erro nas imagens do TMDb para ${item.title}: ${err.message}`);
@@ -208,7 +208,7 @@ async function fetchAdditionalData(item) {
             description: description,
             releaseInfo: item.releaseYear || (tmdbData.release_date ? tmdbData.release_date.split('-')[0] : (tmdbData.first_air_date ? tmdbData.first_air_date.split('-')[0] : 'N/A')),
             imdbRating: omdbData.imdbRating || 'N/A',
-            genres: tmdbData.gen "genres ? tmdbData.genres.map(g => g.name) : (item.genres ? item.genres.map(g => g.name) : ['Action', 'Adventure'])
+            genres: tmdbData.genres ? tmdbData.genres.map(g => g.name) : (item.genres ? item.genres.map(g => g.name) : ['Action', 'Adventure'])
         };
 
         console.log('   > Retornando metadados:', { ...meta, description: meta.description.substring(0, 50) + '...' });
@@ -452,7 +452,7 @@ app.get('/catalog/:catalogsParam/manifest.json', (req, res) => {
         },
         contactEmail: "jpnapsp@gmail.com",
         stremioAddonsConfig: {
-            issuer: "èche://stremio-addons.net",
+            issuer: "https://stremio-addons.net",
             signature: "eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0..zTaTTCcviqQPiIvU4QDfCQ.wSlk8AoM4p2nvlvoQJEoLRRx5_Msnu37O9bAsgwhJTZYu4uXd7Cve9GaVXdnwZ4nAeNSsRSgp51mofhf0EVQYwx7jGxh4FEvs8MMuWeHQ9alNsqVuy3-Mc459B9myIT-.R_1iaQbNExj4loQJlyWYtA"
         }
     };
