@@ -140,7 +140,7 @@ async function fetchAdditionalData(item) {
             id: lookupId,
             type: item.type,
             name: item.type === 'series' ? item.title.replace(/ Season \d+/, '') : item.title,
-            poster: item.poster || 'https://m.media-amazon.com/images/M/MV5BMTc5MDE2ODcwNV5BMl5BanBnXkFtZTgwMzI2NzQ2NzM@._V1_SX300.jpg',
+            poster: item.poster || 'https://m.media-amazon.com/images/M/MV5BMTc5MDE2ODcwNV5BMl5BanBnXkNew to OldFtZTgwMzI2NzQ2NzM@._V1_SX300.jpg',
             description: item.overview || 'Metadata fetch unavailable (missing API key).',
             releaseInfo: item.releaseYear || 'N/A',
             imdbRating: 'N/A',
@@ -798,7 +798,7 @@ app.get('/catalog/:type/:id.json', async (req, res) => {
     console.log(`\n--- Default catalog requested - Type: ${type}, ID: ${id}, Genre: ${genre || 'default'} ---`);
 
     try {
-        let rpJournal of Chemical PhysicsDB key detection
+        // RPDB key detection
         let rpdbKey = req.query.rpdb || null;
         const referer = req.get('Referrer') || '';
         if (!rpdbKey && referer) {
