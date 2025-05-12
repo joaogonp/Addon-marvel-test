@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="pt" class="dark">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Marvel Teste - Configurar Addon</title>
+    <title>Marvel Teste - Configure Addon</title>
     <!-- Import Vue.js -->
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
     <!-- Import Tailwind CSS via CDN -->
@@ -62,15 +62,16 @@
         
         .catalog-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-            gap: 1rem;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 1.5rem;
         }
         
         .catalog-item {
             position: relative;
             aspect-ratio: 1/1;
+            min-height: 120px;
             border-radius: 16px;
-            overflow: visible;
+            overflow: hidden;
             transition: all 0.2s ease;
             cursor: pointer;
             background-color: rgba(229, 36, 41, 0.2);
@@ -82,7 +83,6 @@
             border: 2px solid #e62429;
             padding: 12px 8px;
             text-align: center;
-            height: 100%;
             transform-origin: center center;
         }
         
@@ -97,8 +97,7 @@
             border: 2px solid #e53e3e;
             box-shadow: 0 0 15px rgba(229, 36, 41, 0.5);
             transform: translateY(-5px);
-            position: relative;
-            z-index: 1;
+            z-index: 2;
         }
         
         .catalog-item.selected::before {
@@ -122,6 +121,7 @@
             100% { background-position: 0% 50%; }
         }
         
+        .catalog-item .custom-icon,
         .catalog-item .item-icon {
             width: 40px;
             height: 40px;
@@ -132,11 +132,20 @@
             position: relative;
             z-index: 2;
             transition: all 0.2s ease;
+        }
+        
+        .catalog-item .item-icon {
             font-size: 1.75rem;
         }
         
-        .catalog-item.selected .item-icon {
-            filter: drop-shadow(0 0 3px rgba(229, 36, 41, 0.7));
+        .mcu-icon,
+        .xmen-icon {
+            filter: brightness(0) invert(1);
+            object-fit: contain;
+        }
+        
+        .catalog-item.selected .custom-icon {
+            filter: brightness(0) invert(1) drop-shadow(0 0 3px rgba(229, 36, 41, 0.7));
         }
         
         .catalog-item .item-name {
@@ -147,6 +156,8 @@
             width: 100%;
             position: relative;
             z-index: 2;
+            overflow-wrap: break-word;
+            padding: 0 4px;
         }
         
         .pulse-effect {
@@ -246,8 +257,8 @@
             <div class="flex items-center justify-center mb-8">
                 <div class="text-center">
                     <img src="https://raw.githubusercontent.com/joaogonp/addon-marvel/main/assets/icon.png" alt="Marvel Teste Logo" class="w-16 h-16 mx-auto mb-4">
-                    <h1 class="text-2xl font-bold mb-1">Configurar Addon</h1>
-                    <p class="text-sm text-gray-400">Selecione os catálogos para incluir no seu addon Marvel Teste</p>
+                    <h1 class="text-2xl font-bold mb-1">Configure Addon</h1>
+                    <p class="text-sm text-gray-400">Select catalogs to include in your Marvel Teste addon</p>
                 </div>
             </div>
             
@@ -260,25 +271,25 @@
                             @click="selectAll" 
                             class="text-sm text-white bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-full transition"
                         >
-                            Selecionar todos
+                            Select All
                         </button>
                         <button 
                             @click="deselectAll" 
                             class="text-sm text-white bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-full transition"
                         >
-                            Desmarcar todos
+                            Deselect All
                         </button>
                     </div>
                     
                     <!-- Catalogs grid -->
                     <div v-if="loading" class="text-center py-10">
                         <i class="fas fa-spinner fa-spin text-3xl mb-3"></i>
-                        <p>Carregando catálogos...</p>
+                        <p>Loading catalogs...</p>
                     </div>
                     
                     <div v-else-if="error" class="text-center bg-red-900/50 p-4 rounded-lg">
                         <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
-                        <p class="font-semibold">Falha ao carregar catálogos</p>
+                        <p class="font-semibold">Failed to load catalogs</p>
                     </div>
                     
                     <div v-else class="catalog-grid mb-8">
@@ -288,29 +299,43 @@
                             @click="toggleCatalog(catalog)"
                             :class="['catalog-item', {'selected pulse-effect': selectedCatalogs.includes(catalog.id)}]"
                         >
-                            <i :class="['fas fa-' + catalog.icon, 'item-icon']"></i>
+                            <!-- Ícones personalizados para MCU e X-Men -->
+                            <template v-if="catalog.id === 'marvel-mcu'">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Marvel_Studios_2016_logo.svg/320px-Marvel_Studios_2016_logo.svg.png" 
+                                    alt="MCU Logo" 
+                                    class="custom-icon mcu-icon">
+                            </template>
+                            <template v-else-if="catalog.id === 'xmen'">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/X-Men_logo.svg/320px-X-Men_logo.svg.png" 
+                                    alt="X-Men Logo" 
+                                    class="custom-icon xmen-icon">
+                            </template>
+                            <template v-else>
+                                <i :class="['fas fa-' + catalog.icon, 'item-icon']"></i>
+                            </template>
+                            
                             <span class="item-name">{{ catalog.name }}</span>
                         </div>
                     </div>
                     
                     <!-- Selected count -->
                     <div v-if="!loading && !error" class="mb-6 bg-black/30 rounded-lg p-3 text-center text-sm">
-                        <span>{{ selectedCatalogs.length }} {{ selectedCatalogs.length === 1 ? 'catálogo' : 'catálogos' }} selecionado(s)</span>
+                        <span>{{ selectedCatalogs.length }} {{ selectedCatalogs.length === 1 ? 'catalog' : 'catalogs' }} selected</span>
                     </div>
                     
                     <!-- RPDB Key Input -->
                     <div class="mb-6">
-                        <label for="rpdb-key" class="block text-sm font-medium text-gray-400 mb-2">Chave RatingPosterDB (opcional)</label>
+                        <label for="rpdb-key" class="block text-sm font-medium text-gray-400 mb-2">RatingPosterDB Key (optional)</label>
                         <input 
                             type="text" 
                             id="rpdb-key"
                             v-model="rpdbKey" 
                             class="custom-input" 
-                            placeholder="Insira a chave RPDB (formato: t0-xxxxxxxx)"
+                            placeholder="Enter RPDB key (format: t0-xxxxxxxx)"
                         >
                         <div class="text-xs text-gray-500 mt-2">
                             <a href="https://ratingposterdb.com" target="_blank" class="text-blue-400 hover:underline">
-                                <i class="fas fa-info-circle mr-1"></i>Sobre o RPDB
+                                <i class="fas fa-info-circle mr-1"></i>About RPDB
                             </a>
                         </div>
                     </div>
@@ -321,14 +346,14 @@
                         class="install-button"
                         :disabled="selectedCatalogs.length === 0"
                     >
-                        Instalar addon
+                        Install Addon
                     </button>
                 </div>
             </div>
 
             <!-- Footer -->
             <div class="text-center mt-8 pt-6 border-t border-gray-800 text-sm text-gray-400">
-                <p class="mb-4">Marvel Teste Addon para Stremio © 2025</p>
+                <p class="mb-4">Marvel Teste Addon for Stremio © 2025</p>
                 <div class="flex justify-center items-center space-x-6">
                     <a href="https://github.com/joaogonp/addon-marvel" target="_blank" class="hover:text-white transition" aria-label="GitHub Repository">
                         <i class="fab fa-github text-2xl"></i>
@@ -345,20 +370,20 @@
             <div v-if="showInstallPanel" class="modal" @click.self="showInstallPanel = false">
                 <div class="modal-content">
                     <div class="flex justify-between items-center mb-5 pb-4 border-b border-gray-700">
-                        <h3 class="text-lg font-bold">Link de Instalação Pronto</h3>
+                        <h3 class="text-lg font-bold">Installation Link Ready</h3>
                         <button @click="showInstallPanel = false" class="text-gray-400 hover:text-white rounded-full h-8 w-8 flex items-center justify-center bg-gray-800 hover:bg-gray-700 transition">
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
                     
-                    <p class="mb-5 text-sm">Seu addon Marvel Teste personalizado está pronto para instalar!</p>
+                    <p class="mb-5 text-sm">Your personalized Marvel Teste addon is ready to install!</p>
                         
                     <div class="flex flex-col gap-4 mb-6">
                         <a 
                             :href="stremioUrl" 
                             class="install-button text-center"
                         >
-                            <i class="fas fa-plus-circle mr-2"></i>Instalar no Stremio
+                            <i class="fas fa-plus-circle mr-2"></i>Install in Stremio
                         </a>
                             
                         <button 
@@ -366,7 +391,7 @@
                             class="bg-gray-700 hover:bg-gray-600 text-white py-3 px-4 rounded-xl transition text-center"
                         >
                             <i class="fas" :class="copied ? 'fa-check' : 'fa-copy'"></i>
-                            <span class="ml-2">{{ copied ? 'Copiado!' : 'Copiar URL' }}</span>
+                            <span class="ml-2">{{ copied ? 'Copied!' : 'Copy URL' }}</span>
                         </button>
                     </div>
                         
@@ -402,7 +427,7 @@
                     fetch('/api/catalogs')
                         .then(response => {
                             if (!response.ok) {
-                                throw new Error(`Erro HTTP! status: ${response.status}`);
+                                throw new Error(`HTTP error! status: ${response.status}`);
                             }
                             return response.json();
                         })
@@ -412,7 +437,7 @@
                             this.loading = false;
                         })
                         .catch(error => {
-                            console.error("Erro ao buscar catálogos:", error);
+                            console.error("Error fetching catalogs:", error);
                             this.error = true;
                             this.loading = false;
                         });
@@ -451,14 +476,14 @@
                 },
                 generateLink() {
                     if (this.selectedCatalogs.length === 0) {
-                        alert('Por favor, selecione pelo menos um catálogo');
+                        alert('Please select at least one catalog');
                         return;
                     }
                     
                     const host = window.location.host;
                     const protocol = window.location.protocol;
 
-                    // Verificar se todos os catálogos estão selecionados
+                    // Check if all catalogs are selected
                     const allCatalogIds = this.catalogs.map(c => c.id);
                     const sortedSelected = [...this.selectedCatalogs].sort();
                     const sortedAll = [...allCatalogIds].sort();
@@ -493,8 +518,8 @@
                             this.copied = false;
                         }, 2000);
                     }).catch(err => {
-                        console.error('Falha ao copiar URL: ', err);
-                        alert('Falha ao copiar URL. Por favor, copie manualmente.');
+                        console.error('Failed to copy URL: ', err);
+                        alert('Failed to copy URL. Please copy it manually.');
                     });
                 }
             }
