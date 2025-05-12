@@ -71,22 +71,37 @@ async function getTmdbDetails(id, type) {
     }
 }
 
-// Helper function to replace posters with RPDB posters when a valid key is provided
-function replaceRpdbPosters(rpdbKey, metas) {
+// Helper function to check if RPDB poster is valid
+async function isValidRpdbPoster(rpdbKey, imdbId) {
+    if (!rpdbKey || !imdbId) return false;
+    const url = `https://api.ratingposterdb.com/${rpdbKey}/imdb/poster-default/${imdbId}.jpg`;
+    try {
+        const response = await axios.head(url);
+        return response.status === 200;
+    } catch (err) {
+        console.warn(`RPDB poster unavailable for IMDb ID ${imdbId}: ${err.message}`);
+        return false;
+    }
+}
+
+// Helper function to replace posters with RPDB posters when valid
+async function replaceRpdbPosters(rpdbKey, metas) {
     if (!rpdbKey) {
         return metas;
     }
 
-    return metas.map(meta => {
+    const updatedMetas = await Promise.all(metas.map(async meta => {
         const imdbId = meta.id.startsWith('tt') ? meta.id : null;
-        if (imdbId) {
+        if (imdbId && await isValidRpdbPoster(rpdbKey, imdbId)) {
             return {
                 ...meta,
                 poster: `https://api.ratingposterdb.com/${rpdbKey}/imdb/poster-default/${imdbId}.jpg`
             };
         }
-        return meta;
-    });
+        return meta; // Keep original poster if RPDB poster is invalid
+    }));
+
+    return updatedMetas;
 }
 
 // Function to fetch additional metadata
@@ -231,17 +246,30 @@ async function fetchAdditionalData(item) {
 // Function to sort data by release date
 function sortByReleaseDate(data, order = 'desc') {
     return [...data].sort((a, b) => {
-        const dateA = a.releaseInfo || a.releaseYear;
-        const dateB = b.releaseInfo || b.releaseYear;
-        const isTBA_A = dateA === 'TBA' || dateA === null || isNaN(new Date(dateA).getTime());
-        const isTBA_B = dateB === 'TBA' || dateB === null || isNaN(new Date(dateB).getTime());
+        const dateA = a.releaseInfo || a.releaseYear || 'N/A';
+        const dateB = b.releaseInfo || b.releaseYear || 'N/A';
+        const isTBA_A = dateA === 'TBA' || dateA === 'N/A' || dateA === null || isNaN(new Date(dateA).getTime());
+        const isTBA_B = dateB === 'TBA' || dateB === 'N/A' || dateB === null || isNaN(new Date(dateB).getTime());
 
-        if (isTBA_A && isTBA_B) return 0;
-        if (isTBA_A) return order === 'asc' ? 1 : -1;
-        if (isTBA_B) return order === 'asc' ? -1 : 1;
+        if (isTBA_A && isTBA_B) {
+            console.log(`Both items have invalid dates: ${a.title || 'Unknown'} (${dateA}) vs ${b.title || 'Unknown'} (${dateB})`);
+            return 0;
+        }
+        if (isTBA_A) {
+            console.log(`Item A has invalid date: ${a.title || 'Unknown'} (${dateA})`);
+            return order === 'asc' ? 1 : -1;
+        }
+        if (isTBA_B) {
+            console.log(`Item B has invalid date: ${b.title || 'Unknown'} (${dateB})`);
+            return order === 'asc' ? -1 : 1;
+        }
 
         const timeA = new Date(dateA).getTime();
         const timeB = new Date(dateB).getTime();
+        if (isNaN(timeA) || isNaN(timeB)) {
+            console.warn(`Invalid date comparison: ${a.title || 'Unknown'} (${dateA}) vs ${b.title || 'Unknown'} (${dateB})`);
+            return 0;
+        }
         return order === 'asc' ? timeA - timeB : timeB - timeA;
     });
 }
@@ -514,7 +542,7 @@ app.get('/rpdb/:rpdbKey/catalog/:type/:id.json', async (req, res) => {
     const cacheKey = `default-${id}${genre ? `_${genre}` : ''}`;
     if (cachedCatalog[cacheKey]) {
         console.log(`✅ Returning cached catalog for ID: ${cacheKey} with RPDB posters`);
-        const metasWithRpdbPosters = replaceRpdbPosters(rpdbKey, cachedCatalog[cacheKey].metas);
+        const metasWithRpdbPosters = await replaceRpdbPosters(rpdbKey, cachedCatalog[cacheKey].metas);
         return res.json({ metas: metasWithRpdbPosters });
     }
     
@@ -559,9 +587,6 @@ app.get('/rpdb/:rpdbKey/catalog/:type/:id.json', async (req, res) => {
         } else if (genre === 'new') {
             dataSource = sortByReleaseDate([...dataSource], 'desc');
             console.log(`${dataSourceName} - Applying sort: desc (new to old)`);
-        } else if (id === 'animations' && !genre) {
-            dataSource = sortByReleaseDate([...dataSource], 'asc');
-            console.log(`${dataSourceName} - Applying default sort: asc (old to new)`);
         } else {
             console.log(`${dataSourceName} - Using default data order`);
         }
@@ -580,7 +605,7 @@ app.get('/rpdb/:rpdbKey/catalog/:type/:id.json', async (req, res) => {
     
     cachedCatalog[cacheKey] = { metas: validMetas };
     
-    const metasWithRpdbPosters = replaceRpdbPosters(rpdbKey, validMetas);
+    const metasWithRpdbPosters = await replaceRpdbPosters(rpdbKey, validMetas);
     return res.json({ metas: metasWithRpdbPosters });
 });
 
@@ -604,7 +629,7 @@ app.get('/catalog/:catalogsParam/catalog/:type/:id.json', async (req, res) => {
     if (cachedCatalog[cacheKey]) {
         console.log(`✅ Returning cached catalog for ID: ${cacheKey}`);
         if (rpdbKey) {
-            const metasWithRpdbPosters = replaceRpdbPosters(rpdbKey, cachedCatalog[cacheKey].metas);
+            const metasWithRpdbPosters = await replaceRpdbPosters(rpdbKey, cachedCatalog[cacheKey].metas);
             return res.json({ metas: metasWithRpdbPosters });
         }
         return res.json(cachedCatalog[cacheKey]);
@@ -651,9 +676,6 @@ app.get('/catalog/:catalogsParam/catalog/:type/:id.json', async (req, res) => {
         } else if (genre === 'new') {
             dataSource = sortByReleaseDate([...dataSource], 'desc');
             console.log(`${dataSourceName} - Applying sort: desc (new to old)`);
-        } else if (id === 'animations' && !genre) {
-            dataSource = sortByReleaseDate([...dataSource], 'asc');
-            console.log(`${dataSourceName} - Applying default sort: asc (old to new)`);
         } else {
             console.log(`${dataSourceName} - Using default data order`);
         }
@@ -673,7 +695,7 @@ app.get('/catalog/:catalogsParam/catalog/:type/:id.json', async (req, res) => {
     cachedCatalog[cacheKey] = { metas: validMetas };
     
     if (rpdbKey) {
-        const metasWithRpdbPosters = replaceRpdbPosters(rpdbKey, validMetas);
+        const metasWithRpdbPosters = await replaceRpdbPosters(rpdbKey, validMetas);
         return res.json({ metas: metasWithRpdbPosters });
     }
     
@@ -703,7 +725,7 @@ app.get('/catalog/:type/:id.json', async (req, res) => {
     if (cachedCatalog[cacheKey]) {
         console.log(`✅ Returning cached catalog for ID: ${cacheKey}`);
         if (rpdbKey) {
-            const metasWithRpdbPosters = replaceRpdbPosters(rpdbKey, cachedCatalog[cacheKey].metas);
+            const metasWithRpdbPosters = await replaceRpdbPosters(rpdbKey, cachedCatalog[cacheKey].metas);
             return res.json({ metas: metasWithRpdbPosters });
         }
         return res.json(cachedCatalog[cacheKey]);
@@ -750,9 +772,6 @@ app.get('/catalog/:type/:id.json', async (req, res) => {
         } else if (genre === 'new') {
             dataSource = sortByReleaseDate([...dataSource], 'desc');
             console.log(`${dataSourceName} - Applying sort: desc (new to old)`);
-        } else if (id === 'animations' && !genre) {
-            dataSource = sortByReleaseDate([...dataSource], 'asc');
-            console.log(`${dataSourceName} - Applying default sort: asc (old to new)`);
         } else {
             console.log(`${dataSourceName} - Using default data order`);
         }
@@ -772,7 +791,7 @@ app.get('/catalog/:type/:id.json', async (req, res) => {
     cachedCatalog[cacheKey] = { metas: validMetas };
     
     if (rpdbKey) {
-        const metasWithRpdbPosters = replaceRpdbPosters(rpdbKey, validMetas);
+        const metasWithRpdbPosters = await replaceRpdbPosters(rpdbKey, validMetas);
         return res.json({ metas: metasWithRpdbPosters });
     }
     
