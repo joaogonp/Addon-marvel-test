@@ -1,202 +1,504 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Marvel Addon Configurator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Marvel Teste - Configurar Addon</title>
+    <!-- Import Vue.js -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <!-- Import Tailwind CSS via CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        marvel: {
+                            red: '#e62429',
+                            dark: '#1a202c',
+                            card: 'rgba(229, 36, 41, 0.2)',
+                            button: '#e53e3e',
+                            text: '#ffffff',
+                            accent: '#c53030'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <style>
+        [v-cloak] { display: none; }
+        
         body {
+            min-height: 100vh;
+            transition: background-color 0.3s ease;
+        }
+        
+        .light body {
+            background-color: #ffffff;
+        }
+        
+        .dark body {
             background-color: #1a202c;
-            color: #e2e8f0;
-            font-family: 'Arial', sans-serif;
+            background-image: linear-gradient(to bottom, #2d3748 0%, #1a202c 100%);
         }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
+        
+        .glassmorphic {
+            background: rgba(229, 36, 41, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            border-radius: 36px;
+            overflow: hidden;
         }
-        .catalog-card {
-            background-color: #2d3748;
-            border-radius: 8px;
-            padding: 16px;
-            margin-bottom: 16px;
+        
+        .container-padding {
+            padding: 28px 24px;
         }
-        .catalog-card img {
-            max-width: 100%;
-            border-radius: 8px;
+        
+        .catalog-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 1rem;
         }
-        .catalog-checkbox {
-            margin-right: 8px;
-        }
-        .generated-link {
-            background-color: #4a5568;
-            padding: 16px;
-            border-radius: 8px;
-            word-break: break-all;
-        }
-        .copy-button {
-            background-color: #3182ce;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 4px;
-            margin-top: 8px;
+        
+        .catalog-item {
+            position: relative;
+            aspect-ratio: 1/1;
+            border-radius: 16px;
+            overflow: visible;
+            transition: all 0.2s ease;
             cursor: pointer;
+            background-color: rgba(229, 36, 41, 0.2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            border: 2px solid #e62429;
+            padding: 12px 8px;
+            text-align: center;
+            height: 100%;
+            transform-origin: center center;
         }
-        .copy-button:hover {
-            background-color: #2b6cb0;
+        
+        .catalog-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(229, 36, 41, 0.4);
+            background-color: rgba(229, 36, 41, 0.3);
         }
-        .validate-button {
-            background-color: #38a169;
+        
+        .catalog-item.selected {
+            background-color: rgba(229, 36, 41, 0.4);
+            border: 2px solid #e53e3e;
+            box-shadow: 0 0 15px rgba(229, 36, 41, 0.5);
+            transform: translateY(-5px);
+            position: relative;
+            z-index: 1;
+        }
+        
+        .catalog-item.selected::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            border-radius: 18px;
+            background: linear-gradient(45deg, #e62429, #c53030, #e62429);
+            background-size: 200% 200%;
+            animation: gradient-border 2s ease infinite;
+            z-index: 0;
+            pointer-events: none;
+        }
+        
+        @keyframes gradient-border {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .catalog-item .item-icon {
+            width: 40px;
+            height: 40px;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            z-index: 2;
+            transition: all 0.2s ease;
+            font-size: 1.75rem;
+        }
+        
+        .catalog-item.selected .item-icon {
+            filter: drop-shadow(0 0 3px rgba(229, 36, 41, 0.7));
+        }
+        
+        .catalog-item .item-name {
+            font-size: 0.75rem;
+            line-height: 1.2;
+            text-align: center;
+            display: block;
+            width: 100%;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .pulse-effect {
+            animation: pulse-animation 2s infinite;
+        }
+        
+        @keyframes pulse-animation {
+            0% { box-shadow: 0 0 0 0 rgba(229, 36, 41, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(229, 36, 41, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(229, 36, 41, 0); }
+        }
+        
+        .custom-input {
+            background-color: rgba(10, 10, 15, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             color: white;
-            padding: 8px 16px;
-            border-radius: 4px;
-            margin-left: 8px;
+            padding: 10px 15px;
+            border-radius: 16px;
+            transition: all 0.2s ease;
+            width: 100%;
+        }
+        
+        .light .custom-input {
+            background-color: rgba(255, 255, 255, 0.9);
+            color: #1a202c;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        .custom-input:focus {
+            border-color: #e62429;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(229, 36, 41, 0.3);
+        }
+        
+        .install-button {
+            background-color: #e53e3e;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 16px;
+            transition: all 0.2s ease;
+            width: 100%;
             cursor: pointer;
+            font-weight: 600;
         }
-        .validate-button:hover {
-            background-color: #2f855a;
+        
+        .install-button:hover {
+            background-color: #c53030;
         }
-        .validate-button:disabled {
-            background-color: #4a5568;
+        
+        .install-button:disabled {
+            background-color: #4a4a4a;
             cursor: not-allowed;
+            opacity: 0.7;
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+        }
+        
+        .modal-content {
+            background-color: #1a202c;
+            border-radius: 36px;
+            width: 90%;
+            max-width: 500px;
+            padding: 28px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .light .modal-content {
+            background-color: #ffffff;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        .fade-enter-active, .fade-leave-active {
+            transition: opacity 0.3s;
+        }
+        
+        .fade-enter, .fade-leave-to {
+            opacity: 0;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1 class="text-3xl font-bold mb-6 text-center">Marvel Addon Configurator</h1>
-        <p class="text-center mb-8">Select the catalogs you want to include in your Marvel Addon.</p>
-        
-        <div id="catalogs" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <!-- Catalog cards will be populated by JavaScript -->
-        </div>
-
-        <div class="mt-8">
-            <label for="rpdbKey" class="block text-lg font-medium mb-2">RPDB API Key (Optional)</label>
-            <div class="flex items-center">
-                <input type="text" id="rpdbKey" class="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-blue-500" placeholder="Enter your RPDB API Key for ratings and posters">
-                <button id="validateRpdbKey" class="validate-button" disabled>Validate</button>
+    <div id="app" v-cloak class="text-white py-8 px-4 md:py-16">
+        <div class="max-w-xl mx-auto">
+            <!-- Header -->
+            <div class="flex items-center justify-center mb-8">
+                <div class="text-center">
+                    <img src="https://raw.githubusercontent.com/joaogonp/addon-marvel/main/assets/icon.png" alt="Marvel Teste Logo" class="w-16 h-16 mx-auto mb-4">
+                    <h1 class="text-2xl font-bold mb-1">Configurar Addon</h1>
+                    <p class="text-sm text-gray-400">Selecione os catálogos para incluir no seu addon Marvel Teste</p>
+                </div>
             </div>
-            <p class="text-sm text-gray-400 mt-2">Enter a Rating Poster DB API key to enable ratings (any tier) or custom posters (Tier 1 only). Copy the key exactly from <a href="https://ratingposterdb.com" target="_blank" class="text-blue-500 hover:underline">ratingposterdb.com</a>. If validation fails, ensure no extra spaces and check key status.</p>
-            <p id="rpdbValidationMessage" class="text-sm mt-2"></p>
-        </div>
+            
+            <!-- Main content -->
+            <div class="glassmorphic shadow-lg">
+                <div class="container-padding">
+                    <!-- Select all / Deselect all buttons -->
+                    <div class="flex justify-between items-center mb-6">
+                        <button 
+                            @click="selectAll" 
+                            class="text-sm text-white bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-full transition"
+                        >
+                            Selecionar todos
+                        </button>
+                        <button 
+                            @click="deselectAll" 
+                            class="text-sm text-white bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-full transition"
+                        >
+                            Desmarcar todos
+                        </button>
+                    </div>
+                    
+                    <!-- Catalogs grid -->
+                    <div v-if="loading" class="text-center py-10">
+                        <i class="fas fa-spinner fa-spin text-3xl mb-3"></i>
+                        <p>Carregando catálogos...</p>
+                    </div>
+                    
+                    <div v-else-if="error" class="text-center bg-red-900/50 p-4 rounded-lg">
+                        <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+                        <p class="font-semibold">Falha ao carregar catálogos</p>
+                    </div>
+                    
+                    <div v-else class="catalog-grid mb-8">
+                        <div 
+                            v-for="catalog in catalogs" 
+                            :key="catalog.id" 
+                            @click="toggleCatalog(catalog)"
+                            :class="['catalog-item', {'selected pulse-effect': selectedCatalogs.includes(catalog.id)}]"
+                        >
+                            <i :class="['fas fa-' + catalog.icon, 'item-icon']"></i>
+                            <span class="item-name">{{ catalog.name }}</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Selected count -->
+                    <div v-if="!loading && !error" class="mb-6 bg-black/30 rounded-lg p-3 text-center text-sm">
+                        <span>{{ selectedCatalogs.length }} {{ selectedCatalogs.length === 1 ? 'catálogo' : 'catálogos' }} selecionado(s)</span>
+                    </div>
+                    
+                    <!-- RPDB Key Input -->
+                    <div class="mb-6">
+                        <label for="rpdb-key" class="block text-sm font-medium text-gray-400 mb-2">Chave RatingPosterDB (opcional)</label>
+                        <input 
+                            type="text" 
+                            id="rpdb-key"
+                            v-model="rpdbKey" 
+                            class="custom-input" 
+                            placeholder="Insira a chave RPDB (formato: t0-xxxxxxxx)"
+                        >
+                        <div class="text-xs text-gray-500 mt-2">
+                            <a href="https://ratingposterdb.com" target="_blank" class="text-blue-400 hover:underline">
+                                <i class="fas fa-info-circle mr-1"></i>Sobre o RPDB
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- Install button -->
+                    <button 
+                        @click="generateLink" 
+                        class="install-button"
+                        :disabled="selectedCatalogs.length === 0"
+                    >
+                        Instalar addon
+                    </button>
+                </div>
+            </div>
 
-        <div class="mt-8">
-            <h2 class="text-xl font-semibold mb-4">Generated Addon Link</h2>
-            <div id="generatedLink" class="generated-link">Select at least one catalog to generate the link.</div>
-            <button id="copyButton" class="copy-button" disabled>Copy Link</button>
+            <!-- Footer -->
+            <div class="text-center mt-8 pt-6 border-t border-gray-800 text-sm text-gray-400">
+                <p class="mb-4">Marvel Teste Addon para Stremio © 2025</p>
+                <div class="flex justify-center items-center space-x-6">
+                    <a href="https://github.com/joaogonp/addon-marvel" target="_blank" class="hover:text-white transition" aria-label="GitHub Repository">
+                        <i class="fab fa-github text-2xl"></i>
+                    </a>
+                    <a href="https://www.buymeacoffee.com/joaogonp" target="_blank" class="hover:text-white transition" aria-label="Buy Me a Coffee">
+                        <i class="fas fa-mug-hot text-2xl"></i>
+                    </a>
+                </div>
+            </div>
         </div>
+        
+        <!-- Installation modal -->
+        <transition name="fade">
+            <div v-if="showInstallPanel" class="modal" @click.self="showInstallPanel = false">
+                <div class="modal-content">
+                    <div class="flex justify-between items-center mb-5 pb-4 border-b border-gray-700">
+                        <h3 class="text-lg font-bold">Link de Instalação Pronto</h3>
+                        <button @click="showInstallPanel = false" class="text-gray-400 hover:text-white rounded-full h-8 w-8 flex items-center justify-center bg-gray-800 hover:bg-gray-700 transition">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <p class="mb-5 text-sm">Seu addon Marvel Teste personalizado está pronto para instalar!</p>
+                        
+                    <div class="flex flex-col gap-4 mb-6">
+                        <a 
+                            :href="stremioUrl" 
+                            class="install-button text-center"
+                        >
+                            <i class="fas fa-plus-circle mr-2"></i>Instalar no Stremio
+                        </a>
+                            
+                        <button 
+                            @click="copyToClipboard" 
+                            class="bg-gray-700 hover:bg-gray-600 text-white py-3 px-4 rounded-xl transition text-center"
+                        >
+                            <i class="fas" :class="copied ? 'fa-check' : 'fa-copy'"></i>
+                            <span class="ml-2">{{ copied ? 'Copiado!' : 'Copiar URL' }}</span>
+                        </button>
+                    </div>
+                        
+                    <div class="bg-black/30 p-4 rounded-2xl text-xs break-all font-mono">
+                        {{ installUrl }}
+                    </div>
+                </div>
+            </div>
+        </transition>
     </div>
 
     <script>
-        async function fetchCatalogs() {
-            try {
-                const response = await fetch('/api/catalogs');
-                const catalogs = await response.json();
-                renderCatalogs(catalogs);
-            } catch (error) {
-                console.error('Error fetching catalogs:', error);
-                document.getElementById('catalogs').innerHTML = '<p class="text-red-500">Error loading catalogs. Please try again later.</p>';
-            }
-        }
+        new Vue({
+            el: '#app',
+            data: {
+                catalogs: [],
+                selectedCatalogs: [],
+                showInstallPanel: false,
+                installUrl: '',
+                stremioUrl: '',
+                copied: false,
+                loading: true,
+                error: false,
+                rpdbKey: ''
+            },
+            mounted() {
+                this.fetchCatalogs();
+            },
+            methods: {
+                fetchCatalogs() {
+                    this.loading = true;
+                    this.error = false;
+                    fetch('/api/catalogs')
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error(`Erro HTTP! status: ${response.status}`);
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            this.catalogs = data;
+                            this.applyPredefinedSelectionsOrSelectAll();
+                            this.loading = false;
+                        })
+                        .catch(error => {
+                            console.error("Erro ao buscar catálogos:", error);
+                            this.error = true;
+                            this.loading = false;
+                        });
+                },
+                applyPredefinedSelectionsOrSelectAll() {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const predefinedIdsParam = urlParams.get('predefined');
 
-        async function validateRpdbKey(key) {
-            const validationMessage = document.getElementById('rpdbValidationMessage');
-            if (!key) {
-                validationMessage.textContent = '';
-                return false;
-            }
+                    if (predefinedIdsParam) {
+                        const predefinedIds = predefinedIdsParam.split(',');
+                        this.selectedCatalogs = predefinedIds.filter(id => this.catalogs.some(catalog => catalog.id === id));
+                        if (this.selectedCatalogs.length === 0) {
+                            this.selectAll();
+                        }
+                    } else {
+                        this.selectAll();
+                    }
+                },
+                selectAll() {
+                    if (this.catalogs && this.catalogs.length > 0) {
+                        this.selectedCatalogs = this.catalogs.map(c => c.id);
+                    }
+                },
+                deselectAll() {
+                    this.selectedCatalogs = [];
+                    this.showInstallPanel = false;
+                },
+                toggleCatalog(catalog) {
+                    const index = this.selectedCatalogs.indexOf(catalog.id);
+                    if (index === -1) {
+                        this.selectedCatalogs.push(catalog.id);
+                    } else {
+                        this.selectedCatalogs.splice(index, 1);
+                    }
+                    this.showInstallPanel = false;
+                },
+                generateLink() {
+                    if (this.selectedCatalogs.length === 0) {
+                        alert('Por favor, selecione pelo menos um catálogo');
+                        return;
+                    }
+                    
+                    const host = window.location.host;
+                    const protocol = window.location.protocol;
 
-            try {
-                const response = await fetch(`/api/validate-rpdb?key=${encodeURIComponent(key)}`);
-                const result = await response.json();
-                console.log('RPDB validation response:', result);
+                    // Verificar se todos os catálogos estão selecionados
+                    const allCatalogIds = this.catalogs.map(c => c.id);
+                    const sortedSelected = [...this.selectedCatalogs].sort();
+                    const sortedAll = [...allCatalogIds].sort();
+                    const allSelected = sortedSelected.length === sortedAll.length && sortedSelected.every((val, index) => val === sortedAll[index]);
 
-                if (response.ok && result.valid) {
-                    validationMessage.textContent = 'Valid RPDB API Key! Ratings enabled; Tier 1 keys also enable custom posters.';
-                    validationMessage.className = 'text-sm text-green-500 mt-2';
-                    return true;
-                } else {
-                    const errorMessage = result.error || 'Invalid RPDB API Key.';
-                    validationMessage.textContent = `${errorMessage} Copy the key exactly from ratingposterdb.com, without spaces, or generate a new key.`;
-                    validationMessage.className = 'text-sm text-red-500 mt-2';
-                    return false;
+                    if (allSelected) {
+                        if (this.rpdbKey) {
+                            this.installUrl = `${protocol}//${host}/rpdb/${encodeURIComponent(this.rpdbKey)}/manifest.json`;
+                            this.stremioUrl = `stremio://${host}/rpdb/${encodeURIComponent(this.rpdbKey)}/manifest.json`;
+                        } else {
+                            this.installUrl = `${protocol}//${host}/manifest.json`;
+                            this.stremioUrl = `stremio://${host}/manifest.json`;
+                        }
+                    } else {
+                        const catalogParam = this.selectedCatalogs.join(',');
+                        if (this.rpdbKey) {
+                            const configParts = [catalogParam, this.rpdbKey].join(':');
+                            this.installUrl = `${protocol}//${host}/catalog/${encodeURIComponent(configParts)}/manifest.json`;
+                            this.stremioUrl = `stremio://${host}/catalog/${encodeURIComponent(configParts)}/manifest.json`;
+                        } else {
+                            this.installUrl = `${protocol}//${host}/catalog/${encodeURIComponent(catalogParam)}/manifest.json`;
+                            this.stremioUrl = `stremio://${host}/catalog/${encodeURIComponent(catalogParam)}/manifest.json`;
+                        }
+                    }
+                    
+                    this.showInstallPanel = true;
+                },
+                copyToClipboard() {
+                    navigator.clipboard.writeText(this.installUrl).then(() => {
+                        this.copied = true;
+                        setTimeout(() => {
+                            this.copied = false;
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Falha ao copiar URL: ', err);
+                        alert('Falha ao copiar URL. Por favor, copie manualmente.');
+                    });
                 }
-            } catch (error) {
-                console.error('Error validating RPDB key:', error);
-                validationMessage.textContent = 'Error validating key. Check your network or try again later.';
-                validationMessage.className = 'text-sm text-red-500 mt-2';
-                return false;
             }
-        }
-
-        function renderCatalogs(catalogs) {
-            const catalogsContainer = document.getElementById('catalogs');
-            catalogsContainer.innerHTML = '';
-
-            catalogs.forEach(catalog => {
-                const card = document.createElement('div');
-                card.className = 'catalog-card';
-                card.innerHTML = `
-                    <div class="flex items-center mb-4">
-                        <input type="checkbox" id="${catalog.id}" class="catalog-checkbox" ${catalog.id === 'marvel-mcu' ? 'checked' : ''}>
-                        <label for="${catalog.id}" class="text-lg font-medium">${catalog.name}</label>
-                    </div>
-                    <p class="text-gray-400">${catalog.description}</p>
-                `;
-                catalogsContainer.appendChild(card);
-            });
-
-            updateGeneratedLink();
-            document.querySelectorAll('.catalog-checkbox').forEach(checkbox => {
-                checkbox.addEventListener('change', updateGeneratedLink);
-            });
-
-            const rpdbKeyInput = document.getElementById('rpdbKey');
-            const validateButton = document.getElementById('validateRpdbKey');
-            rpdbKeyInput.addEventListener('input', () => {
-                updateGeneratedLink();
-                validateButton.disabled = !rpdbKeyInput.value.trim();
-            });
-            validateButton.addEventListener('click', async () => {
-                await validateRpdbKey(rpdbKeyInput.value.trim());
-                updateGeneratedLink();
-            });
-        }
-
-        function updateGeneratedLink() {
-            const selectedCatalogs = Array.from(document.querySelectorAll('.catalog-checkbox:checked')).map(checkbox => checkbox.id);
-            const rpdbKey = document.getElementById('rpdbKey').value.trim();
-            const generatedLink = document.getElementById('generatedLink');
-            const copyButton = document.getElementById('copyButton');
-
-            if (selectedCatalogs.length === 0) {
-                generatedLink.textContent = 'Select at least one catalog to generate the link.';
-                copyButton.disabled = true;
-                return;
-            }
-
-            let catalogsParam = selectedCatalogs.join(',');
-            if (rpdbKey) {
-                catalogsParam += `,rpdb_${encodeURIComponent(rpdbKey)}`;
-            }
-
-            const link = `${window.location.origin}/catalog/${encodeURIComponent(catalogsParam)}/manifest.json`;
-            generatedLink.textContent = link;
-            copyButton.disabled = false;
-
-            copyButton.onclick = () => {
-                navigator.clipboard.writeText(link).then(() => {
-                    alert('Link copied to clipboard!');
-                }).catch(err => {
-                    console.error('Error copying link:', err);
-                    alert('Failed to copy link. Please copy it manually.');
-                });
-            };
-        }
-
-        fetchCatalogs();
+        });
     </script>
 </body>
 </html>
