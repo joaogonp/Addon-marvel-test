@@ -308,7 +308,7 @@ function getAllCatalogs() {
         {
             type: "Marvel",
             id: "marvel-mcu",
-            name: "MCU Chronologically Ordered",
+            name: "MCU",
             extra: [
                 {
                     name: "genre",
@@ -494,7 +494,7 @@ app.get('/catalog/:catalogsParam/manifest.json', (req, res) => {
     
     const manifest = {
         id: manifestId,
-        name: "Marvel Teste Custom",
+        name: "Marvel Teste",
         description: `Your custom Marvel catalog: ${selectedApiCatalogs.map(c => c.name).join(', ')}`,
         version: "1.3.0",
         logo: "https://raw.githubusercontent.com/joaogonp/addon-marvel/main/assets/icon.png",
@@ -523,37 +523,37 @@ app.get('/api/catalogs', (req, res) => {
     const catalogInfo = [
         { 
             id: 'marvel-mcu', 
-            name: 'MCU Chronologically Ordered', 
+            name: 'MCU', 
             category: 'Timeline',
-            description: 'Browse the Marvel Cinematic Universe in chronological story order',
+            description: 'Marvel Cinematic Universe in chronological Order!',
             icon: 'calendar-alt'
         },
         { 
             id: 'xmen', 
             name: 'X-Men', 
             category: 'Character',
-            description: 'All movies and content related to the X-Men',
+            description: 'All movies from X-Men in Chronologically Ordered!',
             icon: 'xmen-logo'
         },
         { 
             id: 'movies', 
             name: 'Movies', 
             category: 'Content Type',
-            description: 'All Marvel movies across different franchises',
+            description: 'All Marvel movies!',
             icon: 'film'
         },
         { 
             id: 'series', 
             name: 'Series', 
             category: 'Content Type',
-            description: 'All Marvel television series',
+            description: 'All Marvel series!',
             icon: 'tv'
         },
         { 
             id: 'animations', 
             name: 'Animations', 
             category: 'Content Type',
-            description: 'All Marvel animated features and series',
+            description: 'All Marvel animations!',
             icon: 'play-circle'
         }
     ];
