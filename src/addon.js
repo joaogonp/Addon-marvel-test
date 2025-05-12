@@ -58,9 +58,12 @@ app.get('/configure', (req, res) => {
 
 // Cache storage per ID
 let cachedCatalog = {};
+// Clear cache on startup to ensure fresh data (remove after testing)
+cachedCatalog = {};
 
 // Helper function to fetch TMDb details
 async function getTmdbDetails(id, type) {
+    console.log(`Fetching TMDb details for ${type}/${id}`);
     const url = `https://api.themoviedb.org/3/${type}/${id}?api_key=${tmdbKey}&language=en-US&append_to_response=external_ids`;
     try {
         const res = await axios.get(url);
@@ -106,6 +109,7 @@ async function replaceRpdbPosters(rpdbKey, metas) {
         return metas;
     }
 
+    console.log(`Replacing posters with RPDB for ${metas.length} items`);
     const updatedMetas = await Promise.all(metas.map(async meta => {
         const imdbId = meta.id.startsWith('tt') ? meta.id : null;
         if (imdbId && await isValidRpdbPoster(rpdbKey, imdbId)) {
@@ -122,11 +126,11 @@ async function replaceRpdbPosters(rpdbKey, metas) {
 
 // Function to fetch additional metadata
 async function fetchAdditionalData(item) {
-    console.log('\n--- Fetching details for item: ---', item);
+    console.log('\n--- Fetching details for item: ---', JSON.stringify(item, null, 2));
 
     // Basic item validation
     if (!item || (!item.imdbId && !item.id) || !item.type || !item.title) {
-        console.warn('Skipping item due to missing essential data:', item);
+        console.warn('Skipping item due to missing essential data:', JSON.stringify(item));
         return null;
     }
     const lookupId = item.imdbId || item.id;
@@ -140,7 +144,7 @@ async function fetchAdditionalData(item) {
             id: lookupId,
             type: item.type,
             name: item.type === 'series' ? item.title.replace(/ Season \d+/, '') : item.title,
-            poster: item.poster || 'https://m.media-amazon.com/images/M/MV5BMTc5MDE2ODcwNV5BMl5BanBnXkNew to OldFtZTgwMzI2NzQ2NzM@._V1_SX300.jpg',
+            poster: item.poster || 'https://m.media-amazon.com/images/M/MV5BMTc5MDE2ODcwNV5BMl5BanBnXkFtZTgwMzI2NzQ2NzM@._V1_SX300.jpg',
             description: item.overview || 'Metadata fetch unavailable (missing API key).',
             releaseInfo: item.releaseYear || 'N/A',
             imdbRating: 'N/A',
@@ -267,74 +271,45 @@ async function fetchAdditionalData(item) {
 function extractYear(dateStr) {
     if (!dateStr || dateStr === 'TBA' || dateStr === 'N/A' || dateStr === '') {
         console.log(`Invalid date (null/empty/TBA): ${JSON.stringify(dateStr)}`);
-        return null;
+        return NaN;
     }
     if (typeof dateStr !== 'string') {
         console.warn(`Invalid date type (not a string): ${JSON.stringify(dateStr)}`);
-        return null;
+        return NaN;
     }
-    // Match YYYY or YYYY-MM-DD
     const match = dateStr.match(/^(\d{4})(-\d{2}-\d{2})?$/);
     if (match) {
         return parseInt(match[1], 10);
     }
     console.log(`Invalid date format: ${JSON.stringify(dateStr)}`);
-    return null;
+    return NaN;
 }
 
 // Function to sort data by release date
 function sortByReleaseDate(data, order = 'desc') {
     console.log(`\n--- Sorting data (${data.length} items) with order: ${order} ---`);
     try {
-        // Log all items with their releaseInfo/releaseYear
         console.log('Items before sorting:');
         data.forEach(item => {
             console.log(`  ${item.title || 'Unknown'} (releaseInfo: ${JSON.stringify(item.releaseInfo)}, releaseYear: ${JSON.stringify(item.releaseYear)})`);
         });
 
-        // Identify and log items with problematic releaseInfo/releaseYear
-        const invalidItems = data.filter(item => {
-            const date = item.releaseInfo || item.releaseYear;
-            return date && (typeof date !== 'string' || date === 'TBA' || date === 'N/A' || date === '');
-        });
-        if (invalidItems.length > 0) {
-            console.warn('Items with invalid releaseInfo/releaseYear:', invalidItems.map(item => ({
-                title: item.title || 'Unknown',
-                releaseInfo: item.releaseInfo,
-                releaseYear: item.releaseYear
-            })));
-        }
-
         const sortedData = [...data].sort((a, b) => {
-            const dateA = extractYear(a.releaseInfo) || extractYear(a.releaseYear) || null;
-            const dateB = extractYear(b.releaseInfo) || extractYear(b.releaseYear) || null;
+            const yearA = extractYear(a.releaseInfo) || extractYear(a.releaseYear);
+            const yearB = extractYear(b.releaseInfo) || extractYear(b.releaseYear);
 
-            console.log(`Comparing ${a.title || 'Unknown'} (${dateA || 'null'}) vs ${b.title || 'Unknown'} (${dateB || 'null'})`);
+            console.log(`Comparing ${a.title || 'Unknown'} (${isNaN(yearA) ? 'TBD/Invalid' : yearA}) vs ${b.title || 'Unknown'} (${isNaN(yearB) ? 'TBD/Invalid' : yearB})`);
 
-            // Both null or invalid, keep order
-            if (!dateA && !dateB) {
-                console.log(`  Both items have invalid dates`);
-                return 0;
-            }
-            // A is null, push to end (desc) or start (asc)
-            if (!dateA) {
-                console.log(`  Item A has invalid date`);
-                return order === 'asc' ? -1 : 1;
-            }
-            // B is null, push to end (desc) or start (asc)
-            if (!dateB) {
-                console.log(`  Item B has invalid date`);
-                return order === 'asc' ? 1 : -1;
-            }
-
-            // Compare years
-            return order === 'asc' ? dateA - dateB : dateB - dateA;
+            if (isNaN(yearA) && isNaN(yearB)) return 0;
+            if (isNaN(yearA)) return order === 'desc' ? 1 : -1; // TBD to end (desc) or start (asc)
+            if (isNaN(yearB)) return order === 'desc' ? -1 : 1; // TBD to start (desc) or end (asc)
+            return order === 'desc' ? yearB - yearA : yearA - yearB;
         });
 
         console.log('Items after sorting:');
         sortedData.forEach(item => {
-            const date = extractYear(item.releaseInfo) || extractYear(item.releaseYear) || 'null';
-            console.log(`  ${item.title || 'Unknown'} (${date})`);
+            const year = extractYear(item.releaseInfo) || extractYear(item.releaseYear);
+            console.log(`  ${item.title || 'Unknown'} (${isNaN(year) ? 'TBD/Invalid' : year})`);
         });
 
         return sortedData;
@@ -612,6 +587,7 @@ app.get('/rpdb/:rpdbKey/catalog/:type/:id.json', async (req, res) => {
     console.log(`\n--- RPDB-based catalog requested - Type: ${type}, ID: ${id}, RPDB Key: ${rpdbKey.substring(0, 4)}..., Genre: ${genre || 'default'} ---`);
 
     try {
+        console.log('Checking cache...');
         const cacheKey = `default-${id}${genre ? `_${genre}` : ''}`;
         if (cachedCatalog[cacheKey]) {
             console.log(`✅ Returning cached catalog for ID: ${cacheKey} with RPDB posters`);
@@ -620,6 +596,7 @@ app.get('/rpdb/:rpdbKey/catalog/:type/:id.json', async (req, res) => {
             return res.json({ metas: metasWithRpdbPosters });
         }
 
+        console.log('Loading data source...');
         let dataSource;
         let dataSourceName = id;
 
@@ -656,6 +633,7 @@ app.get('/rpdb/:rpdbKey/catalog/:type/:id.json', async (req, res) => {
 
         console.log(`Loaded ${dataSource.length} items for catalog: ${dataSourceName}`);
 
+        console.log('Sorting data...');
         let sortedData = [...dataSource];
         if (genre === 'old') {
             console.log(`${dataSourceName} - Applying sort: asc (old to new)`);
@@ -667,9 +645,10 @@ app.get('/rpdb/:rpdbKey/catalog/:type/:id.json', async (req, res) => {
             console.log(`${dataSourceName} - Using default data order`);
         }
 
-        console.log(`\nGenerating catalog for ${dataSourceName} with ${sortedData.length} items...`);
+        console.log(`Generating catalog for ${dataSourceName} with ${sortedData.length} items...`);
         const metas = await Promise.all(
-            sortedData.map(async (item) => {
+            sortedData.map(async (item, index) => {
+                console.log(`Processing item ${index + 1}/${sortedData.length}: ${item.title || 'Unknown'}`);
                 try {
                     return await fetchAdditionalData(item);
                 } catch (error) {
@@ -684,6 +663,7 @@ app.get('/rpdb/:rpdbKey/catalog/:type/:id.json', async (req, res) => {
 
         cachedCatalog[cacheKey] = { metas: validMetas };
 
+        console.log('Applying RPDB posters...');
         const metasWithRpdbPosters = await replaceRpdbPosters(rpdbKey, validMetas);
         console.log(`Final order for ${id}:`, metasWithRpdbPosters.map(m => `${m.name} (${m.releaseInfo})`).join(', '));
         return res.json({ metas: metasWithRpdbPosters });
@@ -700,16 +680,18 @@ app.get('/catalog/:catalogsParam/catalog/:type/:id.json', async (req, res) => {
     console.log(`\n--- Custom catalog requested - Catalogs: ${catalogsParam}, Type: ${type}, ID: ${id}, Genre: ${genre || 'default'} ---`);
 
     try {
+        console.log('Parsing catalogsParam...');
         let rpdbKey = null;
         let catalogIds = catalogsParam;
 
-        if (catalogsParam.includes(':')) {
+        if (catalogsParam.includes(':') && !catalogsParam.endsWith(':')) {
             const parts = catalogsParam.split(':');
             catalogIds = parts[0];
             rpdbKey = parts[1];
             console.log(`RPDB key detected: ${rpdbKey.substring(0, 4)}...`);
         }
 
+        console.log('Checking cache...');
         const cacheKey = `custom-${id}-${catalogsParam}${genre ? `_${genre}` : ''}`;
         if (cachedCatalog[cacheKey]) {
             console.log(`✅ Returning cached catalog for ID: ${cacheKey}`);
@@ -718,6 +700,7 @@ app.get('/catalog/:catalogsParam/catalog/:type/:id.json', async (req, res) => {
             return res.json({ metas });
         }
 
+        console.log('Loading data source...');
         let dataSource;
         let dataSourceName = id;
 
@@ -754,6 +737,7 @@ app.get('/catalog/:catalogsParam/catalog/:type/:id.json', async (req, res) => {
 
         console.log(`Loaded ${dataSource.length} items for catalog: ${dataSourceName}`);
 
+        console.log('Sorting data...');
         let sortedData = [...dataSource];
         if (genre === 'old') {
             console.log(`${dataSourceName} - Applying sort: asc (old to new)`);
@@ -765,9 +749,10 @@ app.get('/catalog/:catalogsParam/catalog/:type/:id.json', async (req, res) => {
             console.log(`${dataSourceName} - Using default data order`);
         }
 
-        console.log(`\nGenerating catalog for ${dataSourceName} with ${sortedData.length} items...`);
+        console.log(`Generating catalog for ${dataSourceName} with ${sortedData.length} items...`);
         const metas = await Promise.all(
-            sortedData.map(async (item) => {
+            sortedData.map(async (item, index) => {
+                console.log(`Processing item ${index + 1}/${sortedData.length}: ${item.title || 'Unknown'}`);
                 try {
                     return await fetchAdditionalData(item);
                 } catch (error) {
@@ -782,6 +767,7 @@ app.get('/catalog/:catalogsParam/catalog/:type/:id.json', async (req, res) => {
 
         cachedCatalog[cacheKey] = { metas: validMetas };
 
+        console.log('Applying RPDB posters...');
         const finalMetas = rpdbKey ? await replaceRpdbPosters(rpdbKey, validMetas) : validMetas;
         console.log(`Final order for ${id}:`, finalMetas.map(m => `${m.name} (${m.releaseInfo})`).join(', '));
         return res.json({ metas: finalMetas });
@@ -798,6 +784,7 @@ app.get('/catalog/:type/:id.json', async (req, res) => {
     console.log(`\n--- Default catalog requested - Type: ${type}, ID: ${id}, Genre: ${genre || 'default'} ---`);
 
     try {
+        console.log('Checking RPDB key...');
         // RPDB key detection
         let rpdbKey = req.query.rpdb || null;
         const referer = req.get('Referrer') || '';
@@ -809,6 +796,7 @@ app.get('/catalog/:type/:id.json', async (req, res) => {
             }
         }
 
+        console.log('Checking cache...');
         const cacheKey = `default-${id}${genre ? `_${genre}` : ''}`;
         if (cachedCatalog[cacheKey]) {
             console.log(`✅ Returning cached catalog for ID: ${cacheKey}`);
@@ -817,6 +805,7 @@ app.get('/catalog/:type/:id.json', async (req, res) => {
             return res.json({ metas });
         }
 
+        console.log('Loading data source...');
         let dataSource;
         let dataSourceName = id;
 
@@ -853,6 +842,7 @@ app.get('/catalog/:type/:id.json', async (req, res) => {
 
         console.log(`Loaded ${dataSource.length} items for catalog: ${dataSourceName}`);
 
+        console.log('Sorting data...');
         let sortedData = [...dataSource];
         if (genre === 'old') {
             console.log(`${dataSourceName} - Applying sort: asc (old to new)`);
@@ -864,9 +854,10 @@ app.get('/catalog/:type/:id.json', async (req, res) => {
             console.log(`${dataSourceName} - Using default data order`);
         }
 
-        console.log(`\nGenerating catalog for ${dataSourceName} with ${sortedData.length} items...`);
+        console.log(`Generating catalog for ${dataSourceName} with ${sortedData.length} items...`);
         const metas = await Promise.all(
-            sortedData.map(async (item) => {
+            sortedData.map(async (item, index) => {
+                console.log(`Processing item ${index + 1}/${sortedData.length}: ${item.title || 'Unknown'}`);
                 try {
                     return await fetchAdditionalData(item);
                 } catch (error) {
@@ -881,6 +872,7 @@ app.get('/catalog/:type/:id.json', async (req, res) => {
 
         cachedCatalog[cacheKey] = { metas: validMetas };
 
+        console.log('Applying RPDB posters...');
         const finalMetas = rpdbKey ? await replaceRpdbPosters(rpdbKey, validMetas) : validMetas;
         console.log(`Final order for ${id}:`, finalMetas.map(m => `${m.name} (${m.releaseInfo})`).join(', '));
         return res.json({ metas: finalMetas });
