@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -19,7 +19,7 @@
                         marvel: {
                             red: '#e62429',
                             dark: '#1a202c',
-                            card: 'rgba(229, 36, 41, 0.2)',
+                            card: 'rgba(229, 36, 41, 0.7)',
                             button: '#e53e3e',
                             text: '#ffffff',
                             accent: '#c53030'
@@ -33,21 +33,13 @@
         [v-cloak] { display: none; }
         
         body {
-            min-height: 100vh;
-            transition: background-color 0.3s ease;
-        }
-        
-        .light body {
-            background-color: #ffffff;
-        }
-        
-        .dark body {
             background-color: #1a202c;
             background-image: linear-gradient(to bottom, #2d3748 0%, #1a202c 100%);
+            min-height: 100vh;
         }
         
         .glassmorphic {
-            background: rgba(229, 36, 41, 0.1);
+            background: rgba(229, 36, 41, 0.7);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.05);
@@ -62,49 +54,43 @@
         
         .catalog-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-            grid-auto-rows: auto;
-            gap: 1.5rem;
-        }
-        
-        @media (max-width: 640px) {
-            .catalog-grid {
-                grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-                gap: 1rem;
-            }
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 1rem;
         }
         
         .catalog-item {
             position: relative;
-            min-height: 160px;
+            aspect-ratio: 1/1;
             border-radius: 16px;
-            overflow: hidden;
+            overflow: visible;
             transition: all 0.2s ease;
             cursor: pointer;
-            background-color: rgba(229, 36, 41, 0.2);
+            background-color: rgba(229, 36, 41, 0.5);
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: flex-start;
+            justify-content: center;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-            border: 2px solid #e62429;
+            border: 2px solid transparent;
             padding: 12px 8px;
             text-align: center;
+            height: 100%;
             transform-origin: center center;
         }
         
         .catalog-item:hover {
             transform: translateY(-5px);
             box-shadow: 0 8px 15px rgba(229, 36, 41, 0.4);
-            background-color: rgba(229, 36, 41, 0.3);
+            background-color: rgba(229, 36, 41, 0.6);
         }
         
         .catalog-item.selected {
-            background-color: rgba(229, 36, 41, 0.4);
+            background-color: rgba(229, 36, 41, 0.3);
             border: 2px solid #e53e3e;
             box-shadow: 0 0 15px rgba(229, 36, 41, 0.5);
             transform: translateY(-5px);
-            z-index: 2;
+            position: relative;
+            z-index: 1;
         }
         
         .catalog-item.selected::before {
@@ -150,8 +136,7 @@
             object-fit: contain;
         }
         
-        .catalog-item.selected .custom-icon,
-        .catalog-item.selected .item-icon {
+        .catalog-item.selected .custom-icon {
             filter: brightness(0) invert(1) drop-shadow(0 0 3px rgba(229, 36, 41, 0.7));
         }
         
@@ -163,25 +148,18 @@
             width: 100%;
             position: relative;
             z-index: 2;
-            overflow-wrap: break-word;
-            padding: 0 4px;
-            margin-bottom: 0.5rem;
         }
         
         .catalog-item .item-description {
             font-size: 0.65rem;
             line-height: 1.3;
             text-align: center;
-            color: #4b5563;
+            color: #9ca3af;
             width: 100%;
             position: relative;
             z-index: 2;
             overflow-wrap: break-word;
             padding: 0 4px;
-        }
-        
-        .dark .catalog-item .item-description {
-            color: #9ca3af;
         }
         
         .pulse-effect {
@@ -202,12 +180,6 @@
             border-radius: 16px;
             transition: all 0.2s ease;
             width: 100%;
-        }
-        
-        .light .custom-input {
-            background-color: rgba(255, 255, 255, 0.9);
-            color: #1a202c;
-            border: 1px solid rgba(0, 0, 0, 0.1);
         }
         
         .custom-input:focus {
@@ -260,11 +232,6 @@
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
         
-        .light .modal-content {
-            background-color: #ffffff;
-            border: 1px solid rgba(0, 0, 0, 0.1);
-        }
-        
         .fade-enter-active, .fade-leave-active {
             transition: opacity 0.3s;
         }
@@ -275,25 +242,14 @@
     </style>
 </head>
 <body>
-    <div id="app" v-cloak class="text-gray-900 dark:text-white py-8 px-4 md:py-16">
+    <div id="app" v-cloak class="text-white py-8 px-4 md:py-16">
         <div class="max-w-xl mx-auto">
-            <!-- Theme Toggle Button -->
-            <div class="flex justify-end mb-4">
-                <button 
-                    @click="toggleDarkMode" 
-                    class="text-sm text-white bg-gray-700 hover:bg-gray-600 dark:bg-gray-600 dark:hover:bg-gray-500 px-4 py-2 rounded-full transition flex items-center"
-                >
-                    <i class="fas" :class="isDark ? 'fa-sun' : 'fa-moon'" aria-hidden="true"></i>
-                    <span class="ml-2">{{ isDark ? 'Light Mode' : 'Dark Mode' }}</span>
-                </button>
-            </div>
-            
             <!-- Header -->
             <div class="flex items-center justify-center mb-8">
                 <div class="text-center">
                     <img src="https://raw.githubusercontent.com/joaogonp/addon-marvel/main/assets/icon.png" alt="Marvel Teste Logo" class="w-16 h-16 mx-auto mb-4">
                     <h1 class="text-2xl font-bold mb-1">Configure Addon</h1>
-                    <p class="text-sm text-gray-600 dark:text-gray-400">Select catalogs to include in your Marvel Teste addon</p>
+                    <p class="text-sm text-gray-400">Select catalogs to include in your Marvel Teste addon</p>
                 </div>
             </div>
             
@@ -304,13 +260,13 @@
                     <div class="flex justify-between items-center mb-6">
                         <button 
                             @click="selectAll" 
-                            class="text-sm text-white bg-gray-700 hover:bg-gray-600 dark:bg-gray-600 dark:hover:bg-gray-500 px-4 py-2 rounded-full transition"
+                            class="text-sm text-white bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-full transition"
                         >
                             Select All
                         </button>
                         <button 
                             @click="deselectAll" 
-                            class="text-sm text-white bg-gray-700 hover:bg-gray-600 dark:bg-gray-600 dark:hover:bg-gray-500 px-4 py-2 rounded-full transition"
+                            class="text-sm text-white bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-full transition"
                         >
                             Deselect All
                         </button>
@@ -351,21 +307,21 @@
                     </div>
                     
                     <!-- Selected count -->
-                    <div v-if="!loading && !error" class="mb-6 bg-black/30 dark:bg-white/10 rounded-lg p-3 text-center text-sm">
+                    <div v-if="!loading && !error" class="mb-6 bg-black/30 rounded-lg p-3 text-center text-sm">
                         <span>{{ selectedCatalogs.length }} {{ selectedCatalogs.length === 1 ? 'catalog' : 'catalogs' }} selected</span>
                     </div>
                     
                     <!-- RPDB Key Input -->
                     <div class="mb-6">
-                        <label for="rpdb-key" class="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">RatingPosterDB Key (optional)</label>
+                        <label for="rpdb-key" class="block text-sm font-medium text-gray-400 mb-2">RatingPosterDB Key (optional)</label>
                         <input 
                             type="text" 
                             id="rpdb-key"
                             v-model="rpdbKey" 
                             class="custom-input" 
-                            placeholder="Enter RPDB key"
+                            placeholder="Enter RPDB key (format: t0-xxxxxxxx)"
                         >
-                        <div class="text-xs text-gray-500 dark:text-gray-500 mt-2">
+                        <div class="text-xs text-gray-500 mt-2">
                             <a href="https://ratingposterdb.com" target="_blank" class="text-blue-400 hover:underline">
                                 <i class="fas fa-info-circle mr-1"></i>About RPDB
                             </a>
@@ -384,13 +340,13 @@
             </div>
 
             <!-- Footer -->
-            <div class="text-center mt-8 pt-6 border-t border-gray-200 dark:border-gray-800 text-sm text-gray-600 dark:text-gray-400">
+            <div class="text-center mt-8 pt-6 border-t border-gray-800 text-sm text-gray-400">
                 <p class="mb-4">Marvel Teste Addon for Stremio © 2025</p>
                 <div class="flex justify-center items-center space-x-6">
-                    <a href="https://github.com/joaogonp/addon-marvel" target="_blank" class="hover:text-gray-900 dark:hover:text-white transition" aria-label="GitHub Repository">
+                    <a href="https://github.com/joaogonp/addon-marvel" target="_blank" class="hover:text-white transition" aria-label="GitHub Repository">
                         <i class="fab fa-github text-2xl"></i>
                     </a>
-                    <a href="https://www.buymeacoffee.com/joaogonp" target="_blank" class="hover:text-gray-900 dark:hover:text-white transition" aria-label="Buy Me a Coffee">
+                    <a href="https://www.buymeacoffee.com/joaogonp" target="_blank" class="hover:text-white transition" aria-label="Buy Me a Coffee">
                         <i class="fas fa-mug-hot text-2xl"></i>
                     </a>
                 </div>
@@ -401,14 +357,14 @@
         <transition name="fade">
             <div v-if="showInstallPanel" class="modal" @click.self="showInstallPanel = false">
                 <div class="modal-content">
-                    <div class="flex justify-between items-center mb-5 pb-4 border-b border-gray-200 dark:border-gray-700">
+                    <div class="flex justify-between items-center mb-5 pb-4 border-b border-gray-700">
                         <h3 class="text-lg font-bold">Installation Link Ready</h3>
-                        <button @click="showInstallPanel = false" class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-full h-8 w-8 flex items-center justify-center bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 transition">
+                        <button @click="showInstallPanel = false" class="text-gray-400 hover:text-white rounded-full h-8 w-8 flex items-center justify-center bg-gray-800 hover:bg-gray-700 transition">
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
                     
-                    <p class="mb-5 text-sm text-gray-600 dark:text-gray-400">Your personalized Marvel Teste addon is ready to install!</p>
+                    <p class="mb-5 text-sm text-gray-400">Your personalized Marvel Teste addon is ready to install!</p>
                         
                     <div class="flex flex-col gap-4 mb-6">
                         <a 
@@ -420,14 +376,14 @@
                             
                         <button 
                             @click="copyToClipboard" 
-                            class="bg-gray-700 hover:bg-gray-600 dark:bg-gray-600 dark:hover:bg-gray-500 text-white py-3 px-4 rounded-xl transition text-center"
+                            class="bg-gray-700 hover:bg-gray-600 text-white py-3 px-4 rounded-xl transition text-center"
                         >
                             <i class="fas" :class="copied ? 'fa-check' : 'fa-copy'"></i>
                             <span class="ml-2">{{ copied ? 'Copied!' : 'Copy URL' }}</span>
                         </button>
                     </div>
                         
-                    <div class="bg-black/10 dark:bg-white/10 p-4 rounded-2xl text-xs break-all font-mono text-gray-600 dark:text-gray-400">
+                    <div class="bg-black/30 p-4 rounded-2xl text-xs break-all font-mono text-gray-400">
                         {{ installUrl }}
                     </div>
                 </div>
@@ -447,16 +403,10 @@
                 copied: false,
                 loading: true,
                 error: false,
-                rpdbKey: '',
-                isDark: false
+                rpdbKey: ''
             },
             mounted() {
                 this.fetchCatalogs();
-                // Initialize theme based on localStorage or default to light
-                this.isDark = localStorage.getItem('theme') === 'dark';
-                if (this.isDark) {
-                    document.documentElement.classList.add('dark');
-                }
             },
             methods: {
                 fetchCatalogs() {
@@ -521,7 +471,6 @@
                     const host = window.location.host;
                     const protocol = window.location.protocol;
 
-                    // Check if all catalogs are selected
                     const allCatalogIds = this.catalogs.map(c => c.id);
                     const sortedSelected = [...this.selectedCatalogs].sort();
                     const sortedAll = [...allCatalogIds].sort();
@@ -559,11 +508,6 @@
                         console.error('Failed to copy URL: ', err);
                         alert('Failed to copy URL. Please copy it manually.');
                     });
-                },
-                toggleDarkMode() {
-                    this.isDark = !this.isDark;
-                    document.documentElement.classList.toggle('dark');
-                    localStorage.setItem('theme', this.isDark ? 'dark' : 'light');
                 }
             }
         });
