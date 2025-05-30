@@ -350,87 +350,26 @@ function getAllCatalogs() {
             type: "Marvel",
             id: "marvel-mcu",
             name: "MCU",
-            extra: [
-                {
-                    name: "genre",
-                    options: ["new", "old"],
-                    isRequired: false,
-                    default: null,
-                    optionLabels: {
-                        new: "New to Old",
-                        old: "Old to New"
-                    }
-                }
-            ],
-            behaviorHints: {
-                orderHint: 1
-            }
         },
         {
             type: "Marvel",
             id: "xmen",
             name: "X-Men",
-            behaviorHints: {
-                orderHint: 2
-            }
         },
         {
             type: "Marvel",
             id: "movies",
             name: "Movies",
-            extra: [
-                {
-                    name: "genre",
-                    options: ["new"],
-                    isRequired: false,
-                    default: null,
-                    optionLabels: {
-                        new: "New to Old"
-                    }
-                }
-            ],
-            behaviorHints: {
-                orderHint: 3
-            }
         },
         {
             type: "Marvel",
             id: "series",
             name: "Series",
-            extra: [
-                {
-                    name: "genre",
-                    options: ["new"],
-                    isRequired: false,
-                    default: null,
-                    optionLabels: {
-                        new: "New to Old"
-                    }
-                }
-            ],
-            behaviorHints: {
-                orderHint: 4
-            }
         },
         {
             type: "Marvel",
             id: "animations",
             name: "Animations",
-            extra: [
-                {
-                    name: "genre",
-                    options: ["new", "old"],
-                    isRequired: false,
-                    default: "old",
-                    optionLabels: {
-                        new: "New to Old",
-                        old: "Old to New"
-                    }
-                }
-            ],
-            behaviorHints: {
-                orderHint: 5
-            }
         }
     ];
 }
